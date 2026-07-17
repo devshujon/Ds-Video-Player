@@ -62,3 +62,6 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/brand/
+    - assets/brand/concepts/
+    - assets/brand/previews/

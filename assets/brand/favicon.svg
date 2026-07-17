@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <title>DS Video Player</title>
+  <rect width="32" height="32" rx="7" fill="#6C5CE7"/>
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M 9.75 8 H 12.75 C 19.5 8 23.25 11.75 23.25 16 C 23.25 20.25 19.5 24 12.75 24 H 9.75 V 8 Z
+    M 14.25 12.25 L 19.75 16 L 14.25 19.75 V 12.25 Z
+  "/>
+</svg>
