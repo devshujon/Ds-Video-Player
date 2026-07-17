@@ -26,6 +26,7 @@ android/app/profile/
 android/app/release/
 android/local.properties
 android/key.properties
+android/admob.properties
 **/*.keystore
 **/*.jks
 
