@@ -53,6 +53,7 @@ class DSVideoPlayerApp extends StatelessWidget {
               getFolders: sl<GetFolders>(),
               getFavorites: sl<GetFavorites>(),
               getRecentlyPlayed: sl<GetRecentlyPlayed>(),
+              getHidden: sl<GetHidden>(),
               toggleFavorite: sl<ToggleFavorite>(),
             );
             // Begin cache read as early as possible — overlaps with splash paint.

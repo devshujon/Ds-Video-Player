@@ -20,12 +20,14 @@ class MediaLibraryProvider extends ChangeNotifier {
     required GetFolders getFolders,
     required GetFavorites getFavorites,
     required GetRecentlyPlayed getRecentlyPlayed,
+    required GetHidden getHidden,
     required ToggleFavorite toggleFavorite,
   })  : _scanProgressive = scanProgressive,
         _byType = getByType,
         _folders = getFolders,
         _favs = getFavorites,
         _recent = getRecentlyPlayed,
+        _hidden = getHidden,
         _toggleFav = toggleFavorite;
 
   final ScanMediaProgressive _scanProgressive;
@@ -33,6 +35,7 @@ class MediaLibraryProvider extends ChangeNotifier {
   final GetFolders _folders;
   final GetFavorites _favs;
   final GetRecentlyPlayed _recent;
+  final GetHidden _hidden;
   final ToggleFavorite _toggleFav;
 
   LibraryStatus status = LibraryStatus.idle;
@@ -48,6 +51,7 @@ class MediaLibraryProvider extends ChangeNotifier {
   List<MediaFolder> folders = [];
   List<MediaItem> favorites = [];
   List<MediaItem> recent = [];
+  List<MediaItem> hiddenItems = [];
 
   bool get hasCachedContent =>
       videos.isNotEmpty || recent.isNotEmpty || favorites.isNotEmpty;
@@ -141,12 +145,14 @@ class MediaLibraryProvider extends ChangeNotifier {
     final folderRes = await _folders();
     final favRes = await _favs();
     final recentRes = await _recent();
+    final hiddenRes = await _hidden();
 
     videos = _sorted(videoRes.valueOrNull ?? videos);
     audios = _sorted(audioRes.valueOrNull ?? audios);
     folders = folderRes.valueOrNull ?? folders;
     favorites = favRes.valueOrNull ?? favorites;
     recent = recentRes.valueOrNull ?? recent;
+    hiddenItems = hiddenRes.valueOrNull ?? hiddenItems;
   }
 
   void setSort(MediaSort s) {

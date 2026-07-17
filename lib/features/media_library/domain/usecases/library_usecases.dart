@@ -47,6 +47,12 @@ class GetRecentlyPlayed {
   Future<Result<List<MediaItem>>> call() => _repo.getRecentlyPlayed();
 }
 
+class GetHidden {
+  GetHidden(this._repo);
+  final MediaRepository _repo;
+  Future<Result<List<MediaItem>>> call() => _repo.getHidden();
+}
+
 class SearchMedia {
   SearchMedia(this._repo);
   final MediaRepository _repo;

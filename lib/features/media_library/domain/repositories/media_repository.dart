@@ -22,6 +22,8 @@ abstract interface class MediaRepository {
 
   Future<Result<List<MediaItem>>> getRecentlyPlayed();
 
+  Future<Result<List<MediaItem>>> getHidden();
+
   Future<Result<List<MediaItem>>> search(String query);
 
   Future<Result<void>> toggleFavorite(String uri);

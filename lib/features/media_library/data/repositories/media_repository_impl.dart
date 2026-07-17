@@ -77,6 +77,9 @@ class MediaRepositoryImpl implements MediaRepository {
       _guard(_local.recentlyPlayed);
 
   @override
+  Future<Result<List<MediaItem>>> getHidden() => _guard(_local.queryHidden);
+
+  @override
   Future<Result<List<MediaItem>>> search(String query) =>
       _guard(() => _local.search(query));
 

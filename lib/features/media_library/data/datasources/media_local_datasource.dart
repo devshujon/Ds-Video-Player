@@ -9,6 +9,27 @@ class MediaLocalDataSource {
   MediaLocalDataSource(this._appDb);
   final AppDatabase _appDb;
 
+  Future<List<MediaItem>> queryHidden() async {
+    final db = await _appDb.database;
+    final rows = await db.rawQuery('''
+      SELECT mi.*,
+        CASE WHEN f.media_uri IS NULL THEN 0 ELSE 1 END AS fav,
+        COALESCE(h.position_ms, 0) AS resume_ms
+      FROM media_items mi
+      LEFT JOIN favorites f ON f.media_uri = mi.uri
+      LEFT JOIN playback_history h ON h.media_uri = mi.uri
+      WHERE mi.is_hidden = 1
+      ORDER BY mi.date_added DESC
+    ''');
+    return rows
+        .map((r) => MediaItemModel.fromRow(
+              r,
+              isFavorite: r['fav'] == 1,
+              resumePositionMs: (r['resume_ms'] as int?) ?? 0,
+            ))
+        .toList();
+  }
+
   Future<void> upsertAll(List<MediaItem> items) async {
     final db = await _appDb.database;
     final batch = db.batch();

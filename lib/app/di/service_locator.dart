@@ -101,6 +101,7 @@ class ServiceLocator {
       ..registerFactory(() => GetFolders(sl()))
       ..registerFactory(() => GetFavorites(sl()))
       ..registerFactory(() => GetRecentlyPlayed(sl()))
+      ..registerFactory(() => GetHidden(sl()))
       ..registerFactory(() => SearchMedia(sl()))
       ..registerFactory(() => ToggleFavorite(sl()))
       ..registerFactory(() => SaveResume(sl()));

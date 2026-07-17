@@ -4,28 +4,22 @@ import 'package:provider/provider.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../player/domain/entities/playback_args.dart';
 import '../providers/media_library_provider.dart';
-import '../widgets/library_scanning_shell.dart';
 import '../widgets/library_tab_scaffold.dart';
 
-class AudioTab extends StatelessWidget {
-  const AudioTab({super.key});
+class HiddenTab extends StatelessWidget {
+  const HiddenTab({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<MediaLibraryProvider>(
       builder: (context, lib, _) {
-        if (lib.status == LibraryStatus.scanning && lib.audios.isEmpty) {
-          return const LibraryScanningShell();
-        }
-
         return LibraryTabScaffold(
-          items: lib.audios,
-          emptyLabel: 'No audio files found',
-          onFavorite: lib.toggleFavorite,
+          items: lib.hiddenItems,
+          emptyLabel: 'Hidden folders and videos appear here',
           onTap: (item, i) => Navigator.pushNamed(
             context,
-            Routes.audioPlayer,
-            arguments: PlaybackArgs(queue: lib.audios, startIndex: i),
+            Routes.videoPlayer,
+            arguments: PlaybackArgs(queue: lib.hiddenItems, startIndex: i),
           ),
         );
       },

@@ -4,11 +4,15 @@ import 'package:provider/provider.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../ads/presentation/widgets/banner_ad_view.dart';
-import '../../../photos/presentation/screens/photos_tab.dart';
 import '../providers/media_library_provider.dart';
 import 'audio_tab.dart';
+import 'downloads_tab.dart';
+import 'favorites_tab.dart';
+import 'folders_tab.dart';
+import 'hidden_tab.dart';
 import 'video_tab.dart';
 
+/// MX Player-style library shell with six primary tabs.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -16,76 +20,79 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _tab = 0;
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabs;
 
-  static const _titles = ['Videos', 'Audio', 'Photos', 'More'];
+  static const _labels = [
+    'Videos',
+    'Folders',
+    'Audio',
+    'Downloads',
+    'Favorites',
+    'Hidden',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabs = TabController(length: _labels.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _tab == 3 ? AppConstants.appName : _titles[_tab],
-          style: const TextStyle(fontWeight: FontWeight.w700),
+        title: const Text(
+          AppConstants.appName,
+          style: TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () =>
-                Navigator.pushNamed(context, Routes.search),
-          ),
-          if (_tab == 0)
-            IconButton(
-              icon: Icon(
-                context.watch<MediaLibraryProvider>().viewMode ==
-                        LibraryViewMode.grid
-                    ? Icons.view_list
-                    : Icons.grid_view,
-              ),
-              onPressed: () =>
-                  context.read<MediaLibraryProvider>().toggleViewMode(),
+            icon: Icon(
+              context.watch<MediaLibraryProvider>().viewMode ==
+                      LibraryViewMode.grid
+                  ? Icons.view_list
+                  : Icons.grid_view,
             ),
-          if (_tab == 0 || _tab == 1) _SortButton(),
+            onPressed: () =>
+                context.read<MediaLibraryProvider>().toggleViewMode(),
+          ),
+          _SortButton(),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.pushNamed(context, Routes.settings),
+          ),
         ],
+        bottom: TabBar(
+          controller: _tabs,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          tabs: [for (final l in _labels) Tab(text: l)],
+        ),
       ),
       body: Column(
         children: [
           Expanded(
-            child: IndexedStack(
-              index: _tab,
+            child: TabBarView(
+              controller: _tabs,
               children: const [
                 VideoTab(),
+                FoldersTab(),
                 AudioTab(),
-                PhotosTab(),
-                _MoreTab(),
+                DownloadsTab(),
+                FavoritesTab(),
+                HiddenTab(),
               ],
             ),
           ),
-          // Non-intrusive banner above the nav bar; hides for premium.
           const SafeArea(top: false, child: BannerAdView()),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.video_library_outlined),
-              selectedIcon: Icon(Icons.video_library),
-              label: 'Videos'),
-          NavigationDestination(
-              icon: Icon(Icons.library_music_outlined),
-              selectedIcon: Icon(Icons.library_music),
-              label: 'Audio'),
-          NavigationDestination(
-              icon: Icon(Icons.photo_library_outlined),
-              selectedIcon: Icon(Icons.photo_library),
-              label: 'Photos'),
-          NavigationDestination(
-              icon: Icon(Icons.menu),
-              selectedIcon: Icon(Icons.menu_open),
-              label: 'More'),
         ],
       ),
     );
@@ -97,51 +104,13 @@ class _SortButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<MediaSort>(
       icon: const Icon(Icons.sort),
-      onSelected: (s) =>
-          context.read<MediaLibraryProvider>().setSort(s),
+      onSelected: (s) => context.read<MediaLibraryProvider>().setSort(s),
       itemBuilder: (_) => const [
         PopupMenuItem(value: MediaSort.dateDesc, child: Text('Newest')),
         PopupMenuItem(value: MediaSort.nameAsc, child: Text('Name')),
         PopupMenuItem(value: MediaSort.sizeDesc, child: Text('Size')),
-        PopupMenuItem(
-            value: MediaSort.durationDesc, child: Text('Duration')),
+        PopupMenuItem(value: MediaSort.durationDesc, child: Text('Duration')),
       ],
-    );
-  }
-}
-
-class _MoreTab extends StatelessWidget {
-  const _MoreTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = <(IconData, String, String)>[
-      (Icons.auto_awesome_outlined, 'Suggested for you', Routes.recommendations),
-      (Icons.folder_outlined, 'Folders', Routes.folders),
-      (Icons.favorite_outline, 'Favorites', Routes.favorites),
-      (Icons.queue_music_outlined, 'Playlists', Routes.playlists),
-      (Icons.library_books_outlined, 'Library scan', Routes.library),
-      (Icons.file_copy_outlined, 'Duplicate finder', Routes.duplicates),
-      (Icons.cleaning_services_outlined, 'Storage cleaner',
-          Routes.storageCleaner),
-      (Icons.link, 'Open network URL', Routes.streamUrl),
-      (Icons.lock_outline, 'Private Vault', Routes.vault),
-      (Icons.equalizer, 'Equalizer', Routes.equalizer),
-      (Icons.workspace_premium_outlined, 'Go Premium', Routes.premium),
-      (Icons.settings_outlined, 'Settings', Routes.settings),
-    ];
-    return ListView.separated(
-      itemCount: entries.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, i) {
-        final (icon, label, route) = entries[i];
-        return ListTile(
-          leading: Icon(icon),
-          title: Text(label),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.pushNamed(context, route),
-        );
-      },
     );
   }
 }
