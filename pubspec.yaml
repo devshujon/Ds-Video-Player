@@ -2,7 +2,7 @@ name: ds_video_player
 description: "DS Video Player - a fast, modern, premium Android media player by Dev Shujon."
 publish_to: "none"
 
-version: 1.0.4+7
+version: 1.0.5+8
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
