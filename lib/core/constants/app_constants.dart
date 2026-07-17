@@ -8,7 +8,7 @@ class AppConstants {
   static const String privacyPolicyUrl =
       'https://github.com/devshujon/Ds-Video-Player/blob/main/docs/PRIVACY_POLICY.md';
   static const String databaseName = 'ds_video_player.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   // Play Billing product IDs (see docs/05_MONETIZATION.md).
   static const String iapLifetime = 'ds_premium_lifetime';
@@ -28,6 +28,7 @@ class AppConstants {
 
   // Secure-storage keys.
   static const String kPinHash = 'vault_pin_hash';
+  static const String kVaultBiometrics = 'vault_biometrics_enabled';
   static const String kVaultKey = 'vault_aes_key';
   static const String kPremiumToken = 'premium_entitlement_token';
 

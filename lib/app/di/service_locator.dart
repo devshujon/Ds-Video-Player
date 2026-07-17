@@ -113,6 +113,7 @@ class ServiceLocator {
       ..registerFactory(() => GetHidden(sl()))
       ..registerFactory(() => SearchMedia(sl()))
       ..registerFactory(() => ToggleFavorite(sl()))
-      ..registerFactory(() => SaveResume(sl()));
+      ..registerFactory(() => SaveResume(sl()))
+      ..registerFactory(() => RemoveMedia(sl()));
   }
 }

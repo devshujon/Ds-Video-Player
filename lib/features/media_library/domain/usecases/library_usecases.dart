@@ -75,3 +75,9 @@ class SaveResume {
   }) =>
       _repo.saveResume(uri: uri, positionMs: positionMs, durationMs: durationMs);
 }
+
+class RemoveMedia {
+  RemoveMedia(this._repo);
+  final MediaRepository _repo;
+  Future<Result<void>> call(String uri) => _repo.removeMedia(uri);
+}
