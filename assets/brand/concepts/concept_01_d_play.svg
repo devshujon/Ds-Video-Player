@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <title>concept_01_d_play</title>
+  <rect width="512" height="512" rx="112" fill="#6C5CE7"/>
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M 156 128
+    H 204
+    C 312 128 372 188 372 256
+    C 372 324 312 384 204 384
+    H 156
+    V 128
+    Z
+    M 228 196
+    L 316 256
+    L 228 316
+    V 196
+    Z
+  "/>
+</svg>

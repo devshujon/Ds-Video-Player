@@ -34,6 +34,9 @@ class AppTheme {
       seedColor: AppColors.brandPrimary,
       brightness: brightness,
     ).copyWith(
+      primary: AppColors.brandPrimary,
+      secondary: AppColors.brandSecondary,
+      tertiary: AppColors.brandAccent,
       surface: surface,
       error: AppColors.brandError,
     );
@@ -43,7 +46,7 @@ class AppTheme {
     return base.copyWith(
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
-      textTheme: GoogleFonts.interTextTheme(base.textTheme),
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(base.textTheme),
       appBarTheme: AppBarTheme(
         backgroundColor: background,
         surfaceTintColor: Colors.transparent,
