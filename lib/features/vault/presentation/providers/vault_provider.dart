@@ -42,6 +42,7 @@ class VaultProvider extends ChangeNotifier {
   bool biometricsEnabled = false;
   VaultBiometricAvailability biometricAvailability =
       VaultBiometricAvailability.unknown;
+  List<BiometricType> enrolledBiometrics = const [];
 
   bool get hasItems => items.isNotEmpty;
 
@@ -68,12 +69,28 @@ class VaultProvider extends ChangeNotifier {
     try {
       final supported = await _auth.isDeviceSupported();
       final enrolled = await _auth.getAvailableBiometrics();
+      enrolledBiometrics = enrolled;
       biometricAvailability = supported && enrolled.isNotEmpty
           ? VaultBiometricAvailability.available
           : VaultBiometricAvailability.unavailable;
     } catch (_) {
+      enrolledBiometrics = const [];
       biometricAvailability = VaultBiometricAvailability.unavailable;
     }
+  }
+
+  bool get supportsFace => enrolledBiometrics.contains(BiometricType.face);
+
+  bool get supportsFingerprint =>
+      enrolledBiometrics.contains(BiometricType.fingerprint);
+
+  String get biometricUnlockLabel {
+    if (supportsFace && supportsFingerprint) {
+      return 'Unlock with biometrics';
+    }
+    if (supportsFace) return 'Unlock with Face';
+    if (supportsFingerprint) return 'Unlock with fingerprint';
+    return 'Unlock with biometrics';
   }
 
   bool get canUseBiometrics =>
@@ -152,6 +169,7 @@ class VaultProvider extends ChangeNotifier {
 
   Future<void> _refresh() async {
     try {
+      await _repo.purgeMissingBlobs();
       items = await _repo.list();
       categoryCounts = await _repo.categoryCounts();
       errorText = null;
@@ -206,6 +224,11 @@ class VaultProvider extends ChangeNotifier {
         errorText = 'File no longer exists on device';
         return false;
       }
+      final existing = await _repo.findByOriginalUri(item.uri);
+      if (existing != null) {
+        errorText = 'File is already in the vault';
+        return false;
+      }
       await _repo.lockFromMediaItem(
         item,
         onProgress: (p) {
@@ -220,6 +243,48 @@ class VaultProvider extends ChangeNotifier {
     } catch (e) {
       errorText = 'Could not lock file: $e';
       return false;
+    } finally {
+      isImporting = false;
+      importProgress = 0;
+      notifyListeners();
+    }
+  }
+
+  Future<int> lockFolder(List<MediaItem> folderItems) async {
+    if (state != VaultState.unlocked || folderItems.isEmpty) return 0;
+    isImporting = true;
+    importProgress = 0;
+    errorText = null;
+    notifyListeners();
+
+    var locked = 0;
+    try {
+      for (var i = 0; i < folderItems.length; i++) {
+        final item = folderItems[i];
+        final source = File(item.uri);
+        if (!await source.exists()) continue;
+        final existing = await _repo.findByOriginalUri(item.uri);
+        if (existing != null) continue;
+
+        await _repo.lockFromMediaItem(
+          item,
+          categoryOverride: VaultCategory.folders.id,
+          onProgress: (p) {
+            importProgress = (i + p) / folderItems.length;
+            notifyListeners();
+          },
+        );
+        if (await source.exists()) {
+          await source.delete();
+        }
+        await _removeMedia(item.uri);
+        locked++;
+      }
+      await _refresh();
+      return locked;
+    } catch (e) {
+      errorText = 'Could not lock folder: $e';
+      return locked;
     } finally {
       isImporting = false;
       importProgress = 0;

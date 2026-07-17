@@ -95,8 +95,12 @@ class _VaultUnlockViewState extends State<VaultUnlockView> {
                         });
                       }
                     },
-                    icon: const Icon(Icons.fingerprint),
-                    label: const Text('Unlock with biometrics'),
+                    icon: Icon(
+                      vault.supportsFace && !vault.supportsFingerprint
+                          ? Icons.face_rounded
+                          : Icons.fingerprint,
+                    ),
+                    label: Text(vault.biometricUnlockLabel),
                   ),
                   const SizedBox(height: 18),
                   Text('Or enter PIN', style: Theme.of(context).textTheme.labelLarge),
