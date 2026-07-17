@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../ads/presentation/widgets/banner_ad_view.dart';
+import '../home_navigation.dart';
 import '../providers/media_library_provider.dart';
 import 'audio_tab.dart';
 import 'downloads_tab.dart';
@@ -13,8 +14,11 @@ import 'hidden_tab.dart';
 import 'home_dashboard.dart';
 import 'video_tab.dart';
 
-/// MX Player-style library shell. Cold launch lands on [HomeDashboard];
-/// library tabs open only after the user taps them.
+/// MX Player-style library shell.
+///
+/// Fresh launches always land on [HomeDashboard]. Library tabs open only after
+/// an explicit tap. Tab selection survives background resume for the current
+/// session but is never restored across process death.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -24,9 +28,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  /// `null` = Home Dashboard (always on fresh launch).
-  /// Set when a library tab is tapped; kept for the current session only.
-  int? _libraryTab;
+  final HomeNavigationState _nav = HomeNavigationState();
 
   late final TabController _tabs;
 
@@ -51,19 +53,23 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    // TabController drives tab-bar visuals only. Body content is gated by
+    // [_nav.onDashboard] so index 0 never implies Videos on cold start.
     _tabs = TabController(length: _labels.length, vsync: this);
   }
 
-  bool get _onDashboard => _libraryTab == null;
+  bool get _onDashboard => _nav.onDashboard;
 
   void _selectLibraryTab(int index) {
-    setState(() => _libraryTab = index);
-    _tabs.animateTo(index);
+    setState(() {
+      _nav.selectLibraryTab(index);
+      _tabs.index = index;
+    });
   }
 
   void _goToDashboard() {
     if (_onDashboard) return;
-    setState(() => _libraryTab = null);
+    setState(_nav.goToDashboard);
   }
 
   @override
@@ -75,14 +81,15 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final onVideosTab = _libraryTab == 0;
+    final onVideosTab = _nav.activeLibraryTab == 0;
 
     return Scaffold(
       appBar: AppBar(
         title: GestureDetector(
+          key: const Key('home_shell_title'),
           onTap: _onDashboard ? null : _goToDashboard,
           child: Text(
-            _onDashboard ? AppConstants.appName : _labels[_libraryTab!],
+            _onDashboard ? AppConstants.appName : _labels[_nav.activeLibraryTab!],
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
         ),
@@ -108,25 +115,21 @@ class _HomeScreenState extends State<HomeScreen>
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              tabBarTheme: _onDashboard
-                  ? TabBarThemeData(
-                      indicatorColor: Colors.transparent,
-                      dividerColor: Colors.transparent,
-                      labelColor: scheme.onSurfaceVariant,
-                      unselectedLabelColor: scheme.onSurfaceVariant,
-                      overlayColor: WidgetStateProperty.all(Colors.transparent),
-                    )
-                  : null,
-            ),
-            child: TabBar(
-              controller: _tabs,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              onTap: _selectLibraryTab,
-              tabs: [for (final l in _labels) Tab(text: l)],
-            ),
+          child: TabBar(
+            controller: _tabs,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            onTap: _selectLibraryTab,
+            // On the dashboard no library tab is active — flatten all labels
+            // and hide the indicator so Videos is not shown as selected.
+            labelColor:
+                _onDashboard ? scheme.onSurfaceVariant : scheme.primary,
+            unselectedLabelColor: scheme.onSurfaceVariant,
+            indicatorColor:
+                _onDashboard ? Colors.transparent : scheme.primary,
+            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+            dividerColor: scheme.outlineVariant.withValues(alpha: 0.35),
+            tabs: [for (final l in _labels) Tab(text: l)],
           ),
         ),
       ),
@@ -136,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen>
             child: _onDashboard
                 ? const HomeDashboard()
                 : IndexedStack(
-                    index: _libraryTab!,
+                    index: _nav.activeLibraryTab!,
                     children: _tabBodies,
                   ),
           ),
