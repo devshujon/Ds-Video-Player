@@ -44,30 +44,33 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [scheme.primary, scheme.secondary],
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(Icons.play_arrow_rounded,
-                  size: 52, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              AppConstants.appName,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+      body: Semantics(
+        label: 'Loading ${AppConstants.appName}',
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [scheme.primary, scheme.secondary],
                   ),
-            ),
-          ],
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(Icons.play_arrow_rounded,
+                    size: 52, color: Colors.white),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                AppConstants.appName,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../constants/app_constants.dart';
+import '../logging/app_log.dart';
 
 /// Single owner of the SQLite connection. Schema and migrations live here.
 /// See docs/02_DATABASE_SCHEMA.md for the full schema rationale.
@@ -19,14 +20,46 @@ class AppDatabase {
     return _db ??= await _open();
   }
 
+  Future<String> _resolvePath() async {
+    if (_overridePath != null) return _overridePath;
+    final dir = await getApplicationDocumentsDirectory();
+    return p.join(dir.path, AppConstants.databaseName);
+  }
+
   Future<Database> _open() async {
-    final String path;
-    if (_overridePath != null) {
-      path = _overridePath;
-    } else {
-      final dir = await getApplicationDocumentsDirectory();
-      path = p.join(dir.path, AppConstants.databaseName);
+    final path = await _resolvePath();
+    try {
+      return await _openAt(path);
+    } on DatabaseException catch (e) {
+      if (_isCorruption(e)) {
+        AppLog.warn('Database corrupt — recreating', e);
+        await _recreate(path);
+        return _openAt(path);
+      }
+      rethrow;
+    } catch (e, st) {
+      AppLog.error('Database open failed', e, st);
+      rethrow;
     }
+  }
+
+  bool _isCorruption(DatabaseException e) {
+    final msg = e.toString().toLowerCase();
+    return msg.contains('corrupt') ||
+        msg.contains('malformed') ||
+        msg.contains('not a database');
+  }
+
+  Future<void> _recreate(String path) async {
+    try {
+      await close();
+      await deleteDatabase(path);
+    } catch (e, st) {
+      AppLog.warn('Database recreate failed', e, st);
+    }
+  }
+
+  Future<Database> _openAt(String path) {
     return openDatabase(
       path,
       version: AppConstants.databaseVersion,

@@ -77,6 +77,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     WidgetsBinding.instance.removeObserver(this);
     _pipSub?.cancel();
     unawaited(NativePlayerBridge.setAutoPipOnLeave(false));
+    unawaited(VideoPlaybackService.shutdownIfIdle());
     WakelockPlus.disable();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -117,7 +118,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 if (p.errorText != null && !_inPip)
                   Center(
                     child: Text(
-                      p.errorText!,
+                      p.errorText ?? 'Playback error',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -243,12 +244,13 @@ class _VideoSurface extends StatelessWidget {
       AspectRatioMode.fill => null,
       AspectRatioMode.ratio16x9 => 16 / 9,
       AspectRatioMode.ratio4x3 => 4 / 3,
-      AspectRatioMode.original =>
-        player.videoController.rect.value?.width != null &&
-                player.videoController.rect.value!.width > 0
-            ? player.videoController.rect.value!.width /
-                player.videoController.rect.value!.height
-            : null,
+      AspectRatioMode.original => () {
+          final rect = player.videoController.rect.value;
+          if (rect != null && rect.width > 0 && rect.height > 0) {
+            return rect.width / rect.height;
+          }
+          return null;
+        }(),
     };
 
     Widget video = Video(

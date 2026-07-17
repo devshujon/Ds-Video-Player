@@ -11,6 +11,7 @@ import '../../../media_library/domain/entities/media_item.dart';
 import '../../../media_library/domain/usecases/library_usecases.dart';
 import '../../data/services/playback_bridge.dart';
 import '../../data/services/playback_state_store.dart';
+import '../../data/services/video_playback_service.dart';
 import '../../domain/entities/playback_args.dart';
 import '../../domain/entities/playback_state.dart';
 import '../../domain/entities/player_enums.dart';
@@ -47,10 +48,8 @@ class PlayerProvider extends ChangeNotifier implements PlaybackController {
   late VideoController _videoController;
   final List<StreamSubscription<dynamic>> _subs = [];
 
-  Timer? _resumeTicker;
-  Timer? _statePersistTicker;
+  Timer? _persistTicker;
   Timer? _sleepTimer;
-  Timer? _mediaSessionTicker;
   bool _disposed = false;
   int _pendingResumeMs = 0;
   PlaybackState _prefs = const PlaybackState();
@@ -120,9 +119,7 @@ class PlayerProvider extends ChangeNotifier implements PlaybackController {
     _index = args.startIndex.clamp(0, args.queue.length - 1);
     _pendingResumeMs = resumeEnabled ? args.resumePositionMs : 0;
     if (backgroundEnabled) PlaybackBridge.attach(this);
-    _startResumeTicker();
-    _startStatePersistTicker();
-    _startMediaSessionTicker();
+    _startPersistTicker();
     await _openCurrent();
   }
 
@@ -275,34 +272,24 @@ class PlayerProvider extends ChangeNotifier implements PlaybackController {
     return Media('file://${File(uri).absolute.path}');
   }
 
-  void _startResumeTicker() {
-    _resumeTicker?.cancel();
-    _resumeTicker =
-        Timer.periodic(const Duration(seconds: 5), (_) => _tickResume());
+  void _startPersistTicker() {
+    _persistTicker?.cancel();
+    _persistTicker =
+        Timer.periodic(const Duration(seconds: 8), (_) => _tickPersist());
   }
 
-  void _startStatePersistTicker() {
-    _statePersistTicker?.cancel();
-    _statePersistTicker =
-        Timer.periodic(const Duration(seconds: 4), (_) => _persistFullState());
-  }
-
-  void _startMediaSessionTicker() {
-    _mediaSessionTicker?.cancel();
-    _mediaSessionTicker =
-        Timer.periodic(const Duration(seconds: 1), (_) => _syncMediaSession());
-  }
-
-  void _syncMediaSession() => PlaybackBridge.onStateChanged?.call();
-
-  void _tickResume() {
+  void _tickPersist() {
     final item = currentItem;
     if (item == null) return;
-    if (position < AppConstants.resumeMinWatched) return;
-    _persistResume(item);
+    _persistFullState();
+    if (position >= AppConstants.resumeMinWatched) {
+      _persistResume(item);
+    }
   }
 
   bool _completionHandled = false;
+
+  void _syncMediaSession() => PlaybackBridge.onStateChanged?.call();
   void _onCompleted() {
     if (_completionHandled) return;
     _completionHandled = true;
@@ -613,13 +600,12 @@ class PlayerProvider extends ChangeNotifier implements PlaybackController {
   @override
   void dispose() {
     _disposed = true;
-    _resumeTicker?.cancel();
-    _statePersistTicker?.cancel();
-    _mediaSessionTicker?.cancel();
+    _persistTicker?.cancel();
     _sleepTimer?.cancel();
     final item = currentItem;
     if (item != null) _persistFullState();
     PlaybackBridge.detach(this);
+    unawaited(VideoPlaybackService.shutdownIfIdle());
     for (final s in _subs) {
       unawaited(s.cancel());
     }

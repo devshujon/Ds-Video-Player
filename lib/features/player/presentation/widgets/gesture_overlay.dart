@@ -79,8 +79,9 @@ class _GestureOverlayState extends State<GestureOverlay> {
             onLongPressEnd: tapOnly
                 ? null
                 : (_) {
-                    if (_previousSpeed != null) {
-                      p.setSpeed(_previousSpeed!);
+                    final prev = _previousSpeed;
+                    if (prev != null) {
+                      p.setSpeed(prev);
                       _previousSpeed = null;
                     }
                   },
@@ -117,14 +118,16 @@ class _GestureOverlayState extends State<GestureOverlay> {
                 : (d) async {
                     final zone = _activeZone;
                     if (zone == null || zone == _GestureZone.center) return;
-                    final delta = -d.primaryDelta! / size.height;
+                    final delta = d.primaryDelta;
+                    if (delta == null) return;
+                    final step = -delta / size.height;
                     if (zone == _GestureZone.left) {
-                      _brightness = (_brightness + delta).clamp(0.0, 1.0);
+                      _brightness = (_brightness + step).clamp(0.0, 1.0);
                       await ScreenBrightness()
                           .setApplicationScreenBrightness(_brightness);
                       _showHud('☀ ${(_brightness * 100).round()}%');
                     } else {
-                      _volume = (_volume + delta).clamp(0.0, 1.0);
+                      _volume = (_volume + step).clamp(0.0, 1.0);
                       await FlutterVolumeController.setVolume(_volume);
                       _showHud('🔊 ${(_volume * 100).round()}%');
                     }
@@ -142,7 +145,9 @@ class _GestureOverlayState extends State<GestureOverlay> {
                 ? null
                 : (d) {
                     if (_activeZone != _GestureZone.center) return;
-                    _seekAccumSec += d.primaryDelta! / 8;
+                    final delta = d.primaryDelta;
+                    if (delta == null) return;
+                    _seekAccumSec += delta / 8;
                     final sign = _seekAccumSec >= 0 ? '+' : '−';
                     _showHud('$sign${_seekAccumSec.abs().round()}s',
                         hold: const Duration(milliseconds: 1500));
@@ -161,7 +166,9 @@ class _GestureOverlayState extends State<GestureOverlay> {
         ),
         if (_hud != null)
           Center(
-            child: Container(
+            child: Semantics(
+              liveRegion: true,
+              child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.black54,
@@ -177,6 +184,7 @@ class _GestureOverlayState extends State<GestureOverlay> {
               ),
             ),
           ),
+        ),
       ],
     );
   }

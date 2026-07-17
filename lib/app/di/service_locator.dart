@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -96,6 +98,9 @@ class ServiceLocator {
 
     // Prewarm SQLite so the first cache read during splash is instant.
     await sl<AppDatabase>().database;
+
+    // Purge stale thumbnails off the critical path.
+    unawaited(sl<ThumbnailCacheService>().purgeStale());
 
     // --- Use cases ---
     sl

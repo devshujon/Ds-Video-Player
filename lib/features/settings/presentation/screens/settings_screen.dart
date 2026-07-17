@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -120,18 +122,29 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
           const _Header('Privacy'),
           ListTile(
+            leading: const Icon(Icons.policy_outlined),
+            title: const Text('Privacy policy'),
+            subtitle: const Text('How we handle your data'),
+            onTap: () => _openPrivacyPolicy(context),
+          ),
+          ListTile(
             leading: const Icon(Icons.lock_outline),
             title: const Text('Private Vault'),
             onTap: () => Navigator.pushNamed(context, Routes.vault),
           ),
           const Divider(),
           const _Header('About'),
-          ListTile(
-            title: const Text(AppConstants.appName),
-            subtitle: const Text(
-              'by ${AppConstants.brand} · v1.0.0',
-            ),
-            leading: const Icon(Icons.info_outline),
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snap) {
+              final version = snap.data?.version ?? '1.0.0';
+              final build = snap.data?.buildNumber ?? '1';
+              return ListTile(
+                title: const Text(AppConstants.appName),
+                subtitle: Text('by ${AppConstants.brand} · v$version ($build)'),
+                leading: const Icon(Icons.info_outline),
+              );
+            },
           ),
         ],
       ),
@@ -143,6 +156,16 @@ class SettingsScreen extends StatelessWidget {
         AppThemeMode.dark => 'Dark',
         AppThemeMode.amoled => 'AMOLED (pure black)',
       };
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final uri = Uri.parse(AppConstants.privacyPolicyUrl);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open privacy policy')),
+      );
+    }
+  }
 }
 
 class _Header extends StatelessWidget {

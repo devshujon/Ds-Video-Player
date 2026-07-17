@@ -26,6 +26,7 @@ class SubtitleSheet extends StatelessWidget {
       type: FileType.custom,
       allowedExtensions: MediaFormats.subtitleExtensions.toList(),
     );
+    if (!context.mounted) return;
     final path = result?.files.single.path;
     if (path != null) {
       await player.loadSubtitle(path);

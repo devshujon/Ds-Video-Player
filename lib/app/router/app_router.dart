@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/route_error_screen.dart';
 import '../../features/duplicates/presentation/screens/duplicate_finder_screen.dart';
 import '../../features/equalizer/presentation/screens/equalizer_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
@@ -21,6 +22,7 @@ import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/storage/presentation/screens/storage_cleaner_screen.dart';
 import '../../features/streaming/presentation/screens/stream_url_screen.dart';
 import '../../features/vault/presentation/screens/vault_screen.dart';
+import '../../core/utils/safe_route_args.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -42,9 +44,10 @@ class AppRouter {
       case Routes.playlists:
         page = const PlaylistsScreen();
       case Routes.playlistDetail:
-        page = PlaylistDetailScreen(
-          playlist: settings.arguments as Playlist,
-        );
+        final playlist = routeArg<Playlist>(settings);
+        page = playlist == null
+            ? const RouteErrorScreen(message: 'Playlist not found.')
+            : PlaylistDetailScreen(playlist: playlist);
       case Routes.search:
         page = const SearchScreen();
       case Routes.settings:
@@ -64,14 +67,17 @@ class AppRouter {
       case Routes.recommendations:
         page = const RecommendationsScreen();
       case Routes.videoPlayer:
-        page = VideoPlayerScreen(args: settings.arguments as PlaybackArgs);
+        final args = routeArg<PlaybackArgs>(settings);
+        page = args == null
+            ? const RouteErrorScreen(message: 'Video playback args missing.')
+            : VideoPlayerScreen(args: args);
       case Routes.audioPlayer:
-        // Nullable: an empty-args push (e.g. from a future mini-player) just
-        // displays the currently-playing item without restarting the queue.
-        page = AudioPlayerScreen(args: settings.arguments as PlaybackArgs?);
+        page = AudioPlayerScreen(args: routeArg<PlaybackArgs>(settings));
       case Routes.photoViewer:
-        final a = settings.arguments as PhotoViewerArgs;
-        page = PhotoViewerScreen(args: a);
+        final photoArgs = routeArg<PhotoViewerArgs>(settings);
+        page = photoArgs == null
+            ? const RouteErrorScreen(message: 'Photo viewer args missing.')
+            : PhotoViewerScreen(args: photoArgs);
       default:
         page = const SplashScreen();
     }

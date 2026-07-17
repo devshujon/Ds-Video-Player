@@ -4,7 +4,9 @@ class AppConstants {
 
   static const String appName = 'DS Video Player';
   static const String brand = 'Dev Shujon';
-  static const String packageId = 'com.devshujon.dsvideoplayer';
+  static const String packageId = 'com.devshujon.ds_video_player';
+  static const String privacyPolicyUrl =
+      'https://github.com/devshujon/Ds-Video-Player/blob/main/docs/PRIVACY_POLICY.md';
   static const String databaseName = 'ds_video_player.db';
   static const int databaseVersion = 2;
 
@@ -31,6 +33,9 @@ class AppConstants {
 
   // Tunables.
   static const int thumbnailSizePx = 256;
+  static const int thumbnailMaxMemoryEntries = 200;
+  static const int thumbnailMaxDiskBytes = 200 * 1024 * 1024;
+  static const Duration thumbnailMaxAge = Duration(days: 30);
   static const Duration resumeMinWatched = Duration(seconds: 10);
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 4.0;

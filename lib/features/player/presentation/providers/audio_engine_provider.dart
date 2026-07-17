@@ -21,6 +21,7 @@ class AudioEngineProvider extends ChangeNotifier {
 
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _resumeTicker;
+  bool _disposed = false;
 
   List<MediaItem> _queue = const [];
   int _currentIndex = 0;
@@ -228,7 +229,13 @@ class AudioEngineProvider extends ChangeNotifier {
   }
 
   @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
+  @override
   void dispose() {
+    _disposed = true;
     final item = currentItem;
     if (item != null) _persistResume(item);
     _resumeTicker?.cancel();

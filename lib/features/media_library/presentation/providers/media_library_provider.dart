@@ -52,6 +52,18 @@ class MediaLibraryProvider extends ChangeNotifier {
   List<MediaItem> favorites = [];
   List<MediaItem> recent = [];
   List<MediaItem> hiddenItems = [];
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
 
   bool get hasCachedContent =>
       videos.isNotEmpty || recent.isNotEmpty || favorites.isNotEmpty;

@@ -77,10 +77,22 @@ class VideoPlaybackService {
     }
   }
 
-  static Future<void> stop() async {
+  /// Stops the foreground service when no player session is active.
+  static Future<void> shutdownIfIdle() async {
+    if (PlaybackBridge.active != null) return;
     final h = _handler;
     if (h != null) {
       await h.stop();
     }
+  }
+
+  static Future<void> dispose() async {
+    await shutdownIfIdle();
+    for (final sub in _sessionSubs) {
+      await sub.cancel();
+    }
+    _sessionSubs.clear();
+    _handler = null;
+    _audioSessionConfigured = false;
   }
 }
