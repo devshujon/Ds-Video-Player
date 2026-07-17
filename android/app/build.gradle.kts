@@ -18,6 +18,14 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val admobPropertiesFile = rootProject.file("admob.properties")
+val admobProperties = Properties()
+var admobAppId = "ca-app-pub-6928374150263841~1847293056"
+if (admobPropertiesFile.exists()) {
+    admobProperties.load(FileInputStream(admobPropertiesFile))
+    admobAppId = admobProperties.getProperty("admob.app.id", admobAppId)
+}
+
 android {
     namespace = "com.devshujon.ds_video_player"
     compileSdk = flutter.compileSdkVersion
@@ -37,7 +45,7 @@ android {
             create("release") {
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
+                storeFile = file("../${keystoreProperties["storeFile"] as String}")
                 storePassword = keystoreProperties["storePassword"] as String
             }
         }
@@ -50,9 +58,14 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders["admobAppId"] = admobAppId
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["admobAppId"] =
+                "ca-app-pub-3940256099942544~3347511713"
+        }
         release {
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")

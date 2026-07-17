@@ -1,3 +1,5 @@
+import '../config/ad_config.dart';
+
 /// App-wide constants. No logic here.
 class AppConstants {
   AppConstants._();
@@ -5,8 +7,16 @@ class AppConstants {
   static const String appName = 'DS Video Player';
   static const String brand = 'Dev Shujon';
   static const String packageId = 'com.devshujon.ds_video_player';
+
+  // Legal & support (publish docs/legal/ to GitHub Pages).
+  static const String websiteUrl =
+      'https://devshujon.github.io/Ds-Video-Player/';
   static const String privacyPolicyUrl =
-      'https://github.com/devshujon/Ds-Video-Player/blob/main/docs/PRIVACY_POLICY.md';
+      'https://devshujon.github.io/Ds-Video-Player/privacy';
+  static const String termsUrl =
+      'https://devshujon.github.io/Ds-Video-Player/terms';
+  static const String supportEmail = 'ds.videoplayer.dev@gmail.com';
+
   static const String databaseName = 'ds_video_player.db';
   static const int databaseVersion = 2;
 
@@ -15,16 +25,9 @@ class AppConstants {
   static const String iapMonthly = 'ds_premium_monthly';
   static const String iapYearly = 'ds_premium_yearly';
 
-  // AdMob unit IDs.
-  //
-  // These are Google's documented test IDs — safe to commit and ship in
-  // debug/dev builds. Replace before release with the real units issued by
-  // the AdMob console (and update the APPLICATION_ID meta-data in the
-  // Android manifest accordingly).
-  static const String adUnitBanner =
-      'ca-app-pub-3940256099942544/6300978111';
-  static const String adUnitRewarded =
-      'ca-app-pub-3940256099942544/5224354917';
+  // Ad unit IDs — use [AdConfig] at runtime; these aliases remain for tests.
+  static String get adUnitBanner => AdConfig.bannerUnitId;
+  static String get adUnitRewarded => AdConfig.rewardedUnitId;
 
   // Secure-storage keys.
   static const String kPinHash = 'vault_pin_hash';
@@ -40,6 +43,5 @@ class AppConstants {
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 4.0;
 
-  // Picture-in-Picture — native Android implementation in MainActivity.kt.
   static const bool pictureInPictureEnabled = true;
 }

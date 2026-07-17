@@ -26,6 +26,8 @@ android/app/profile/
 android/app/release/
 android/local.properties
 android/key.properties
+android/admob.properties
+android/upload-keystore.jks
 **/*.keystore
 **/*.jks
 
@@ -35,4 +37,5 @@ Thumbs.db
 
 # Secrets
 *.env
+admob.json
 android/app/google-services.json

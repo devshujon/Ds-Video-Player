@@ -63,6 +63,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           SwitchListTile(
             title: const Text('Background audio'),
+            subtitle: const Text('Continue playback when screen is off'),
             value: settings.backgroundAudio,
             onChanged: settings.setBackgroundAudio,
           ),
@@ -120,12 +121,31 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const Divider(),
-          const _Header('Privacy'),
+          const _Header('Legal & support'),
           ListTile(
             leading: const Icon(Icons.policy_outlined),
             title: const Text('Privacy policy'),
             subtitle: const Text('How we handle your data'),
-            onTap: () => _openPrivacyPolicy(context),
+            onTap: () => _openUrl(context, AppConstants.privacyPolicyUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of use'),
+            onTap: () => _openUrl(context, AppConstants.termsUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.language_outlined),
+            title: const Text('Developer website'),
+            onTap: () => _openUrl(context, AppConstants.websiteUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.mail_outline),
+            title: const Text('Support'),
+            subtitle: Text(AppConstants.supportEmail),
+            onTap: () => _openUrl(
+              context,
+              'mailto:${AppConstants.supportEmail}?subject=DS%20Video%20Player%20Support',
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.lock_outline),
@@ -157,12 +177,12 @@ class SettingsScreen extends StatelessWidget {
         AppThemeMode.amoled => 'AMOLED (pure black)',
       };
 
-  Future<void> _openPrivacyPolicy(BuildContext context) async {
-    final uri = Uri.parse(AppConstants.privacyPolicyUrl);
+  Future<void> _openUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open privacy policy')),
+        SnackBar(content: Text('Could not open $url')),
       );
     }
   }

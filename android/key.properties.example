@@ -1,0 +1,6 @@
+# Copy to key.properties before uploading to Google Play.
+# NEVER commit key.properties or upload-keystore.jks to version control.
+storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=upload
+storeFile=upload-keystore.jks

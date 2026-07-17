@@ -80,37 +80,41 @@ class MediaScannerDataSource {
   }
 
   Future<MediaItem?> _assetToItem(AssetEntity asset, MediaType type) async {
-    final file = await asset.originFile;
-    if (file == null) return null;
+    try {
+      final file = await asset.originFile;
+      if (file == null) return null;
 
-    final path = file.path;
-    final slash = path.lastIndexOf('/');
-    final folder = slash >= 0 ? path.substring(0, slash) : path;
-    final title = asset.title?.trim();
-    final sizeBytes = await asset.fileSize;
+      final path = file.path;
+      final slash = path.lastIndexOf('/');
+      final folder = slash >= 0 ? path.substring(0, slash) : path;
+      final title = asset.title?.trim();
+      final sizeBytes = await asset.fileSize;
 
-    String? thumbPath;
-    if (type == MediaType.video) {
-      thumbPath = await _thumbnails.pathFor(path);
-      if (thumbPath == null) {
-        unawaited(_generateThumb(asset, path));
+      String? thumbPath;
+      if (type == MediaType.video) {
+        thumbPath = await _thumbnails.pathFor(path);
+        if (thumbPath == null) {
+          unawaited(_generateThumb(asset, path));
+        }
       }
-    }
 
-    return MediaItem(
-      uri: path,
-      title: title != null && title.isNotEmpty ? title : path.split('/').last,
-      type: type,
-      folderPath: folder,
-      sizeBytes: sizeBytes,
-      durationMs: asset.duration * 1000,
-      width: asset.width == 0 ? null : asset.width,
-      height: asset.height == 0 ? null : asset.height,
-      mimeType: asset.mimeType,
-      dateAddedMs: asset.createDateTime.millisecondsSinceEpoch,
-      dateModifiedMs: asset.modifiedDateTime.millisecondsSinceEpoch,
-      thumbPath: thumbPath,
-    );
+      return MediaItem(
+        uri: path,
+        title: title != null && title.isNotEmpty ? title : path.split('/').last,
+        type: type,
+        folderPath: folder,
+        sizeBytes: sizeBytes,
+        durationMs: asset.duration * 1000,
+        width: asset.width == 0 ? null : asset.width,
+        height: asset.height == 0 ? null : asset.height,
+        mimeType: asset.mimeType,
+        dateAddedMs: asset.createDateTime.millisecondsSinceEpoch,
+        dateModifiedMs: asset.modifiedDateTime.millisecondsSinceEpoch,
+        thumbPath: thumbPath,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _generateThumb(AssetEntity asset, String uri) async {
