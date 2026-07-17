@@ -60,6 +60,7 @@ class VaultScreen extends StatelessWidget {
                   onPressed: v.isImporting ? null : () => _pickAndImport(context),
                   icon: const Icon(Icons.add),
                   label: const Text('Add file'),
+                  tooltip: 'Add file to vault',
                 )
               : const SizedBox.shrink(),
         ),
@@ -115,7 +116,7 @@ class _UnlockedView extends StatelessWidget {
             color: Theme.of(context).colorScheme.errorContainer,
             padding: const EdgeInsets.all(12),
             child: Text(
-              v.errorText!,
+              v.errorText ?? 'Vault error',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onErrorContainer,
               ),
@@ -303,19 +304,26 @@ class _PinFormState extends State<_PinForm> {
             keyboardType: TextInputType.number,
             obscureText: true,
             maxLength: 8,
+            autofocus: true,
             decoration: InputDecoration(
               hintText: 'PIN (min 4 digits)',
               errorText: _error,
               border: const OutlineInputBorder(),
+              labelText: 'Vault PIN',
             ),
           ),
           const SizedBox(height: 8),
-          FilledButton(
-            onPressed: () async {
-              final ok = await widget.onSubmit(_c.text);
-              if (!ok) setState(() => _error = 'Invalid PIN');
-            },
-            child: Text(widget.cta),
+          Semantics(
+            button: true,
+            label: widget.cta,
+            child: FilledButton(
+              onPressed: () async {
+                final ok = await widget.onSubmit(_c.text);
+                if (!mounted) return;
+                if (!ok) setState(() => _error = 'Invalid PIN');
+              },
+              child: Text(widget.cta),
+            ),
           ),
         ],
       ),

@@ -157,12 +157,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                   Positioned(
                     right: 12,
                     top: MediaQuery.sizeOf(context).height / 2 - 24,
-                    child: IconButton(
-                      icon: Icon(
-                        p.isLocked ? Icons.lock : Icons.lock_open,
-                        color: Colors.white,
+                    child: Semantics(
+                      button: true,
+                      label: p.isLocked ? 'Unlock controls' : 'Lock controls',
+                      child: IconButton(
+                        icon: Icon(
+                          p.isLocked ? Icons.lock : Icons.lock_open,
+                          color: Colors.white,
+                        ),
+                        onPressed: context.read<PlayerProvider>().toggleLock,
                       ),
-                      onPressed: context.read<PlayerProvider>().toggleLock,
                     ),
                   ),
                 if (p.sleepRemaining != null && !_inPip)
@@ -325,6 +329,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
+            tooltip: 'Go back',
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
@@ -338,8 +343,12 @@ class _TopBar extends StatelessWidget {
           ),
           TextButton(
             onPressed: onCycleAspect,
-            child: Text(aspectLabel,
-                style: const TextStyle(color: Colors.white, fontSize: 12)),
+            child: Semantics(
+              button: true,
+              label: 'Aspect ratio $aspectLabel',
+              child: Text(aspectLabel,
+                  style: const TextStyle(color: Colors.white, fontSize: 12)),
+            ),
           ),
           IconButton(
             tooltip: 'Sleep timer',

@@ -6,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 
 import 'app/app.dart';
 import 'app/di/service_locator.dart';
+import 'core/config/ad_config.dart';
 import 'core/logging/app_log.dart';
 
 Future<void> main() async {
@@ -19,6 +20,7 @@ Future<void> main() async {
     );
 
     await ServiceLocator.init();
+    AdConfig.assertReleaseSafe();
     startup.stop();
     AppLog.warn('Cold startup (init only): ${startup.elapsedMilliseconds}ms');
 

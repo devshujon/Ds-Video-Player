@@ -37,10 +37,12 @@ class _EqualizerScreenState extends State<EqualizerScreen> {
   };
 
   void _applyPreset(String name) {
+    final preset = _presets[name];
+    if (preset == null) return;
     setState(() {
       _preset = name;
       for (var i = 0; i < 10; i++) {
-        _gains[i] = _presets[name]![i];
+        _gains[i] = preset[i];
       }
     });
   }
@@ -104,9 +106,12 @@ class _EqualizerScreenState extends State<EqualizerScreen> {
       appBar: AppBar(
         title: const Text('Equalizer'),
         actions: [
-          Switch(
-            value: _enabled,
-            onChanged: (v) => setState(() => _enabled = v),
+          Semantics(
+            label: _enabled ? 'Disable equalizer' : 'Enable equalizer',
+            child: Switch(
+              value: _enabled,
+              onChanged: (v) => setState(() => _enabled = v),
+            ),
           ),
         ],
       ),
@@ -128,16 +133,21 @@ class _EqualizerScreenState extends State<EqualizerScreen> {
                         !_adUnlocked.contains(name);
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(locked ? '$name 🔒' : name),
+                      child: Semantics(
+                        button: true,
                         selected: _preset == name,
-                        onSelected: (_) {
-                          if (locked) {
-                            _showLockedSheet(context, name);
-                          } else {
-                            _applyPreset(name);
-                          }
-                        },
+                        label: '$name preset${locked ? ', locked' : ''}',
+                        child: ChoiceChip(
+                          label: Text(locked ? '$name 🔒' : name),
+                          selected: _preset == name,
+                          onSelected: (_) {
+                            if (locked) {
+                              _showLockedSheet(context, name);
+                            } else {
+                              _applyPreset(name);
+                            }
+                          },
+                        ),
                       ),
                     );
                   }).toList(),
@@ -153,12 +163,16 @@ class _EqualizerScreenState extends State<EqualizerScreen> {
                         Expanded(
                           child: RotatedBox(
                             quarterTurns: 3,
-                            child: Slider(
-                              min: -12,
-                              max: 12,
-                              value: _gains[i],
-                              onChanged: (v) =>
-                                  setState(() => _gains[i] = v),
+                            child: Semantics(
+                              label: '${_bands[i]} band',
+                              value: '${_gains[i].round()} decibels',
+                              child: Slider(
+                                min: -12,
+                                max: 12,
+                                value: _gains[i],
+                                onChanged: (v) =>
+                                    setState(() => _gains[i] = v),
+                              ),
                             ),
                           ),
                         ),
@@ -177,10 +191,14 @@ class _EqualizerScreenState extends State<EqualizerScreen> {
                   children: [
                     const Text('Bass Boost'),
                     Expanded(
-                      child: Slider(
-                        value: _bass,
-                        max: 100,
-                        onChanged: (v) => setState(() => _bass = v),
+                      child: Semantics(
+                        label: 'Bass boost',
+                        value: '${_bass.round()} percent',
+                        child: Slider(
+                          value: _bass,
+                          max: 100,
+                          onChanged: (v) => setState(() => _bass = v),
+                        ),
                       ),
                     ),
                     Text('${_bass.round()}%'),

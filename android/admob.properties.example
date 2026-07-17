@@ -1,0 +1,3 @@
+# Copy to admob.properties and replace with your AdMob console IDs.
+# Used for the Android manifest APPLICATION_ID in release builds.
+admob.app.id=ca-app-pub-6928374150263841~1847293056
