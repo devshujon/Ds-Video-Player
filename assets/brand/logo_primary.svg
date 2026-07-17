@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 320" fill="none">
+  <title>DS Video Player</title>
+  <!-- Mark -->
+  <rect x="32" y="32" width="256" height="256" rx="56" fill="#6C5CE7"/>
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M 84 96 H 108 C 160 96 192 128 192 160 C 192 192 160 224 108 224 H 84 V 96 Z
+    M 120 116 L 164 160 L 120 204 V 116 Z
+  "/>
+  <!-- Wordmark -->
+  <text x="328" y="148" fill="#0F1117" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="72" font-weight="700" letter-spacing="-1.5">DS Video</text>
+  <text x="328" y="228" fill="#6C5CE7" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-size="56" font-weight="600" letter-spacing="-0.5">Player</text>
+</svg>

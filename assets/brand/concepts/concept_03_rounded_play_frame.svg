@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <title>concept_03_rounded_play_frame</title>
+  <rect width="512" height="512" rx="112" fill="#0F1117"/>
+  <circle cx="256" cy="256" r="148" stroke="#6C5CE7" stroke-width="20"/>
+  <circle cx="256" cy="256" r="118" fill="#6C5CE7"/>
+  <path fill="#FFFFFF" d="M 232 196 L 232 316 L 324 256 L 232 196 Z"/>
+</svg>

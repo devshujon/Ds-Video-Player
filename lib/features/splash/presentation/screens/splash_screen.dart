@@ -7,9 +7,10 @@ import '../../../../app/di/service_locator.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/permission_service.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../media_library/presentation/providers/media_library_provider.dart';
 
-/// Minimal splash — permissions + cache load only. Scan runs on home.
+/// Branded splash — permissions + cache load only. Scan runs on home.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -42,31 +43,31 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor:
+          isDark ? AppColors.brandDark : AppColors.lightBackground,
       body: Semantics(
         label: 'Loading ${AppConstants.appName}',
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [scheme.primary, scheme.secondary],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Icon(Icons.play_arrow_rounded,
-                    size: 52, color: Colors.white),
+              Image.asset(
+                'assets/icons/app_icon.png',
+                width: 96,
+                height: 96,
+                semanticLabel: '${AppConstants.appName} logo',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Text(
                 AppConstants.appName,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                      color: isDark
+                          ? AppColors.brandWhite
+                          : AppColors.brandDark,
                     ),
               ),
             ],
