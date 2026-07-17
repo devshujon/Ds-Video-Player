@@ -21,6 +21,7 @@ import '../../features/storage/data/storage_analyzer.dart';
 import '../../features/streaming/data/recent_streams_store.dart';
 import '../../features/recommendations/data/recommendation_source.dart';
 import '../../features/recommendations/domain/recommender.dart';
+import '../../features/player/data/services/playback_state_store.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -39,6 +40,9 @@ class ServiceLocator {
     sl.registerLazySingleton<PermissionService>(PermissionService.new);
     sl.registerLazySingleton<AdService>(AdService.new);
     sl.registerLazySingleton<ThumbnailCacheService>(ThumbnailCacheService.new);
+    sl.registerLazySingleton<PlaybackStateStore>(
+      () => PlaybackStateStore(sl()),
+    );
 
     // --- Data sources ---
     sl.registerLazySingleton<MediaScannerDataSource>(

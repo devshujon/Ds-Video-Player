@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../player/domain/entities/player_enums.dart';
+
 /// All non-secret user preferences. Persisted to shared_preferences.
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider(this._prefs);
@@ -10,15 +12,27 @@ class SettingsProvider extends ChangeNotifier {
   bool get backgroundAudio => _prefs.getBool(_kBgAudio) ?? true;
   bool get gesturesEnabled => _prefs.getBool(_kGestures) ?? true;
   bool get autoPlayNext => _prefs.getBool(_kAutoNext) ?? true;
-  bool get forceSoftwareDecode => _prefs.getBool(_kForceSw) ?? false;
   bool get rotationLocked => _prefs.getBool(_kRotLock) ?? false;
   int get seekSeconds => _prefs.getInt(_kSeek) ?? 10;
+
+  DecoderMode get decoderMode {
+    if (_prefs.getBool(_kForceSw) ?? false) return DecoderMode.software;
+    final raw = _prefs.getString(_kDecoder);
+    return DecoderMode.values.firstWhere(
+      (m) => m.name == raw,
+      orElse: () => DecoderMode.auto,
+    );
+  }
+
+  /// Legacy alias — maps to software decoder mode.
+  bool get forceSoftwareDecode => decoderMode == DecoderMode.software;
 
   static const _kResume = 's_resume';
   static const _kBgAudio = 's_bg_audio';
   static const _kGestures = 's_gestures';
   static const _kAutoNext = 's_auto_next';
   static const _kForceSw = 's_force_sw';
+  static const _kDecoder = 's_decoder_mode';
   static const _kRotLock = 's_rotation_lock';
   static const _kSeek = 's_seek';
 
@@ -26,8 +40,16 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setBackgroundAudio(bool v) => _set(_kBgAudio, v);
   Future<void> setGestures(bool v) => _set(_kGestures, v);
   Future<void> setAutoPlayNext(bool v) => _set(_kAutoNext, v);
-  Future<void> setForceSoftwareDecode(bool v) => _set(_kForceSw, v);
   Future<void> setRotationLocked(bool v) => _set(_kRotLock, v);
+
+  Future<void> setDecoderMode(DecoderMode mode) async {
+    await _prefs.setString(_kDecoder, mode.name);
+    await _prefs.setBool(_kForceSw, mode == DecoderMode.software);
+    notifyListeners();
+  }
+
+  Future<void> setForceSoftwareDecode(bool v) =>
+      setDecoderMode(v ? DecoderMode.software : DecoderMode.auto);
 
   Future<void> setSeekSeconds(int v) async {
     await _prefs.setInt(_kSeek, v);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit_video/media_kit_video.dart';
@@ -8,6 +10,9 @@ import '../../../../app/di/service_locator.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../media_library/domain/usecases/library_usecases.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../data/services/native_player_bridge.dart';
+import '../../data/services/playback_state_store.dart';
+import '../../data/services/video_playback_service.dart';
 import '../../domain/entities/playback_args.dart';
 import '../providers/player_provider.dart';
 import '../widgets/gesture_overlay.dart';
@@ -22,33 +27,69 @@ class VideoPlayerScreen extends StatefulWidget {
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class _VideoPlayerScreenState extends State<VideoPlayerScreen>
+    with WidgetsBindingObserver {
   bool _showControls = true;
+  bool _inPip = false;
+  StreamSubscription<bool>? _pipSub;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
+      DeviceOrientation.portraitUp,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    NativePlayerBridge.ensureHandler();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initPlayback());
+    _pipSub = NativePlayerBridge.pipModeStream.listen((pip) {
+      if (!mounted) return;
+      setState(() {
+        _inPip = pip;
+        if (pip) _showControls = false;
+      });
+    });
+  }
+
+  Future<void> _initPlayback() async {
+    if (!mounted) return;
+    final settings = context.read<SettingsProvider>();
+    if (settings.backgroundAudio) {
+      await VideoPlaybackService.ensureStarted();
+      await NativePlayerBridge.setAutoPipOnLeave(true);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // media_kit + foreground service keep playback alive in background.
+    if (state == AppLifecycleState.resumed && !_inPip) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pipSub?.cancel();
+    unawaited(NativePlayerBridge.setAutoPipOnLeave(false));
     WakelockPlus.disable();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  void _enterPip() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Picture-in-Picture is coming soon')),
-    );
+  Future<void> _enterPip() async {
+    final ok = await NativePlayerBridge.enterPip();
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Picture-in-Picture is not available')),
+      );
+    }
   }
 
   @override
@@ -57,9 +98,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     return ChangeNotifierProvider(
       create: (_) => PlayerProvider(
-        sl<SaveResume>(),
-        forceSoftwareDecode: settings.forceSoftwareDecode,
+        saveResume: sl<SaveResume>(),
+        stateStore: sl<PlaybackStateStore>(),
+        decoderMode: settings.decoderMode,
         resumeEnabled: settings.resumePlayback,
+        backgroundEnabled: settings.backgroundAudio,
       )..start(widget.args),
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -69,55 +112,59 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               fit: StackFit.expand,
               children: [
                 _VideoSurface(player: p),
-                if (p.isBuffering)
+                if (p.isBuffering && !_inPip)
                   const Center(child: CircularProgressIndicator()),
-                if (p.errorText != null)
+                if (p.errorText != null && !_inPip)
                   Center(
                     child: Text(
                       p.errorText!,
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
-                GestureOverlay(
-                  onToggleControls: () =>
-                      setState(() => _showControls = !_showControls),
-                ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 200),
-                  left: 0,
-                  right: 0,
-                  top: _showControls && !p.isLocked ? 0 : -80,
-                  child: _TopBar(
-                    title: p.currentItem?.title ?? '',
-                    isRotationLocked: p.isRotationLocked,
-                    aspectLabel: _aspectLabel(p.aspectMode),
-                    onSubtitles: () => SubtitleSheet.show(context),
-                    onPip: _enterPip,
-                    onToggleRotation:
-                        context.read<PlayerProvider>().toggleRotationLock,
-                    onCycleAspect: context.read<PlayerProvider>().cycleAspectMode,
-                    onSleepTimer: () => _sleepSheet(context, p),
+                if (!_inPip)
+                  GestureOverlay(
+                    onToggleControls: () =>
+                        setState(() => _showControls = !_showControls),
                   ),
-                ),
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 200),
-                  left: 0,
-                  right: 0,
-                  bottom: _showControls && !p.isLocked ? 0 : -240,
-                  child: const PlayerControls(),
-                ),
-                Positioned(
-                  right: 12,
-                  top: MediaQuery.sizeOf(context).height / 2 - 24,
-                  child: IconButton(
-                    icon: Icon(
-                      p.isLocked ? Icons.lock : Icons.lock_open,
-                      color: Colors.white,
+                if (!_inPip)
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 200),
+                    left: 0,
+                    right: 0,
+                    top: _showControls && !p.isLocked ? 0 : -80,
+                    child: _TopBar(
+                      title: p.currentItem?.title ?? '',
+                      isRotationLocked: p.isRotationLocked,
+                      aspectLabel: _aspectLabel(p.aspectMode),
+                      onSubtitles: () => SubtitleSheet.show(context),
+                      onPip: _enterPip,
+                      onToggleRotation:
+                          context.read<PlayerProvider>().toggleRotationLock,
+                      onCycleAspect: context.read<PlayerProvider>().cycleAspectMode,
+                      onSleepTimer: () => _sleepSheet(context, p),
                     ),
-                    onPressed: context.read<PlayerProvider>().toggleLock,
                   ),
-                ),
-                if (p.sleepRemaining != null)
+                if (!_inPip)
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 200),
+                    left: 0,
+                    right: 0,
+                    bottom: _showControls && !p.isLocked ? 0 : -240,
+                    child: const PlayerControls(),
+                  ),
+                if (!_inPip)
+                  Positioned(
+                    right: 12,
+                    top: MediaQuery.sizeOf(context).height / 2 - 24,
+                    child: IconButton(
+                      icon: Icon(
+                        p.isLocked ? Icons.lock : Icons.lock_open,
+                        color: Colors.white,
+                      ),
+                      onPressed: context.read<PlayerProvider>().toggleLock,
+                    ),
+                  ),
+                if (p.sleepRemaining != null && !_inPip)
                   Positioned(
                     top: MediaQuery.paddingOf(context).top + 48,
                     left: 0,
@@ -196,11 +243,12 @@ class _VideoSurface extends StatelessWidget {
       AspectRatioMode.fill => null,
       AspectRatioMode.ratio16x9 => 16 / 9,
       AspectRatioMode.ratio4x3 => 4 / 3,
-      AspectRatioMode.original => player.videoController.rect.value?.width != null &&
-              player.videoController.rect.value!.width > 0
-          ? player.videoController.rect.value!.width /
-              player.videoController.rect.value!.height
-          : null,
+      AspectRatioMode.original =>
+        player.videoController.rect.value?.width != null &&
+                player.videoController.rect.value!.width > 0
+            ? player.videoController.rect.value!.width /
+                player.videoController.rect.value!.height
+            : null,
     };
 
     Widget video = Video(
@@ -209,6 +257,22 @@ class _VideoSurface extends StatelessWidget {
       fit: player.aspectMode == AspectRatioMode.fill
           ? BoxFit.cover
           : BoxFit.contain,
+      subtitleViewConfiguration: SubtitleViewConfiguration(
+        style: TextStyle(
+          color: Color(player.subtitleColorArgb),
+          fontSize: 16 * player.subtitleFontScale,
+          fontWeight: FontWeight.w600,
+          shadows: player.subtitleOutline
+              ? const [
+                  Shadow(blurRadius: 2, color: Colors.black),
+                  Shadow(blurRadius: 4, color: Colors.black),
+                ]
+              : null,
+          backgroundColor: Colors.black.withValues(
+            alpha: player.subtitleBackgroundOpacity,
+          ),
+        ),
+      ),
     );
 
     if (ar != null) {

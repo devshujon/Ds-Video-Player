@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_controller.dart';
 import '../../../premium/presentation/providers/premium_provider.dart';
+import '../../../player/domain/entities/player_enums.dart';
 import '../providers/settings_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -87,14 +88,34 @@ class SettingsScreen extends StatelessWidget {
               await settings.setSeekSeconds(next);
             },
           ),
-          SwitchListTile(
-            title: const Text('Force software decode'),
-            subtitle: const Text(
-              'Bypass hardware decoders. Use only if videos stutter or fail '
-              'to play on this device.',
+          const _Header('Decoder'),
+          RadioGroup<DecoderMode>(
+            groupValue: settings.decoderMode,
+            onChanged: (v) {
+              if (v != null) settings.setDecoderMode(v);
+            },
+            child: Column(
+              children: DecoderMode.values
+                  .map(
+                    (m) => RadioListTile<DecoderMode>(
+                      value: m,
+                      title: Text(switch (m) {
+                        DecoderMode.auto => 'Auto (recommended)',
+                        DecoderMode.hardware => 'Hardware decoder',
+                        DecoderMode.software => 'Software decoder',
+                      }),
+                      subtitle: Text(switch (m) {
+                        DecoderMode.auto =>
+                          'Uses hardware when available, falls back safely.',
+                        DecoderMode.hardware =>
+                          'MediaCodec — fastest, best battery.',
+                        DecoderMode.software =>
+                          'CPU decode — use if videos fail or stutter.',
+                      }),
+                    ),
+                  )
+                  .toList(),
             ),
-            value: settings.forceSoftwareDecode,
-            onChanged: settings.setForceSoftwareDecode,
           ),
           const Divider(),
           const _Header('Privacy'),

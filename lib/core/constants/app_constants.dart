@@ -35,15 +35,6 @@ class AppConstants {
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 4.0;
 
-  // --- Feature flags ---
-  //
-  // C2 — Picture-in-Picture is OFF. The `floating` package's v4 API was
-  // unverified at integration time, so the dependency was dropped to keep
-  // the build green. Re-enabling: add `floating` back to pubspec, restore
-  // the verified call in video_player_screen.dart, then flip this to true.
-  // See docs/09_PLATFORM_BUILD.md.
-  //
-  // Deliberately `static final`, not `const`: a const false would make the
-  // `if (pictureInPictureEnabled)` guard statically dead code.
-  static final bool pictureInPictureEnabled = false;
+  // Picture-in-Picture — native Android implementation in MainActivity.kt.
+  static const bool pictureInPictureEnabled = true;
 }

@@ -6,14 +6,14 @@ import 'package:screen_brightness/screen_brightness.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../providers/player_provider.dart';
 
-/// Player gesture engine:
-/// - left vertical drag  → brightness
-/// - right vertical drag → volume
-/// - horizontal drag     → seek (live HUD)
-/// - double-tap L/R      → seek ∓N s (N = settings.seekSeconds)
-/// - pinch               → zoom
-/// - long press          → 2× speed
-/// - single tap          → toggle controls
+/// Zone-based gesture engine with edge detection to prevent accidental input.
+///
+/// • Left 22% vertical drag  → brightness
+/// • Right 22% vertical drag → volume
+/// • Center horizontal drag  → seek
+/// • Center double-tap L/R   → seek ∓N s
+/// • Pinch (2 fingers)       → zoom
+/// • Long press center       → 2× speed
 class GestureOverlay extends StatefulWidget {
   const GestureOverlay({super.key, required this.onToggleControls});
   final VoidCallback onToggleControls;
@@ -22,19 +22,30 @@ class GestureOverlay extends StatefulWidget {
   State<GestureOverlay> createState() => _GestureOverlayState();
 }
 
+enum _GestureZone { left, center, right }
+
 class _GestureOverlayState extends State<GestureOverlay> {
+  static const _edgeFraction = 0.22;
+
   double _brightness = 0.5;
   double _volume = 0.5;
   String? _hud;
   double _seekAccumSec = 0;
   double _baseScale = 1.0;
   double? _previousSpeed;
+  _GestureZone? _activeZone;
 
   Future<void> _showHud(String text,
       {Duration hold = const Duration(milliseconds: 700)}) async {
     setState(() => _hud = text);
     await Future<void>.delayed(hold);
     if (mounted && _hud == text) setState(() => _hud = null);
+  }
+
+  _GestureZone _zoneFor(double x, double width) {
+    if (x < width * _edgeFraction) return _GestureZone.left;
+    if (x > width * (1 - _edgeFraction)) return _GestureZone.right;
+    return _GestureZone.center;
   }
 
   @override
@@ -56,7 +67,11 @@ class _GestureOverlayState extends State<GestureOverlay> {
             onTap: widget.onToggleControls,
             onLongPressStart: tapOnly
                 ? null
-                : (_) {
+                : (d) {
+                    if (_zoneFor(d.localPosition.dx, size.width) !=
+                        _GestureZone.center) {
+                      return;
+                    }
                     _previousSpeed = p.speed;
                     p.setSpeed(2.0);
                     _showHud('2× speed', hold: const Duration(seconds: 2));
@@ -72,6 +87,10 @@ class _GestureOverlayState extends State<GestureOverlay> {
             onDoubleTapDown: tapOnly
                 ? null
                 : (d) {
+                    if (_zoneFor(d.localPosition.dx, size.width) !=
+                        _GestureZone.center) {
+                      return;
+                    }
                     final left = d.localPosition.dx < size.width / 2;
                     p.seekBy(Duration(seconds: left ? -seekStep : seekStep));
                     _showHud(left ? '⏪ ${seekStep}s' : '${seekStep}s ⏩');
@@ -90,12 +109,16 @@ class _GestureOverlayState extends State<GestureOverlay> {
                       );
                     }
                   },
+            onVerticalDragStart: tapOnly
+                ? null
+                : (d) => _activeZone = _zoneFor(d.localPosition.dx, size.width),
             onVerticalDragUpdate: tapOnly
                 ? null
                 : (d) async {
-                    final left = d.localPosition.dx < size.width / 2;
+                    final zone = _activeZone;
+                    if (zone == null || zone == _GestureZone.center) return;
                     final delta = -d.primaryDelta! / size.height;
-                    if (left) {
+                    if (zone == _GestureZone.left) {
                       _brightness = (_brightness + delta).clamp(0.0, 1.0);
                       await ScreenBrightness()
                           .setApplicationScreenBrightness(_brightness);
@@ -106,10 +129,19 @@ class _GestureOverlayState extends State<GestureOverlay> {
                       _showHud('🔊 ${(_volume * 100).round()}%');
                     }
                   },
-            onHorizontalDragStart: tapOnly ? null : (_) => _seekAccumSec = 0,
+            onVerticalDragEnd: tapOnly ? null : (_) => _activeZone = null,
+            onHorizontalDragStart: tapOnly
+                ? null
+                : (d) {
+                    _activeZone = _zoneFor(d.localPosition.dx, size.width);
+                    if (_activeZone == _GestureZone.center) {
+                      _seekAccumSec = 0;
+                    }
+                  },
             onHorizontalDragUpdate: tapOnly
                 ? null
                 : (d) {
+                    if (_activeZone != _GestureZone.center) return;
                     _seekAccumSec += d.primaryDelta! / 8;
                     final sign = _seekAccumSec >= 0 ? '+' : '−';
                     _showHud('$sign${_seekAccumSec.abs().round()}s',
@@ -118,10 +150,12 @@ class _GestureOverlayState extends State<GestureOverlay> {
             onHorizontalDragEnd: tapOnly
                 ? null
                 : (_) {
-                    if (_seekAccumSec.abs() >= 1) {
+                    if (_activeZone == _GestureZone.center &&
+                        _seekAccumSec.abs() >= 1) {
                       p.seekBy(Duration(seconds: _seekAccumSec.round()));
                     }
                     _seekAccumSec = 0;
+                    _activeZone = null;
                   },
           ),
         ),
