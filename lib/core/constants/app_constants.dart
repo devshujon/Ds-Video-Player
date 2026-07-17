@@ -38,6 +38,7 @@ class AppConstants {
   static const int thumbnailMaxDiskBytes = 200 * 1024 * 1024;
   static const Duration thumbnailMaxAge = Duration(days: 30);
   static const Duration resumeMinWatched = Duration(seconds: 10);
+  static const Duration vaultInactivityTimeout = Duration(minutes: 2);
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 4.0;
 

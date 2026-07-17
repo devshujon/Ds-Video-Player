@@ -4,12 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../app/router/route_names.dart';
 import '../../domain/entities/vault_category.dart';
 import '../providers/vault_provider.dart';
 import '../widgets/vault_category_card.dart';
 import '../widgets/vault_empty_state.dart';
 import '../widgets/vault_skeleton.dart';
-import 'vault_category_screen.dart';
 
 class VaultHomeView extends StatelessWidget {
   const VaultHomeView({super.key});
@@ -40,10 +40,9 @@ class VaultHomeView extends StatelessWidget {
                 return VaultCategoryCard(
                   category: category,
                   count: count,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => VaultCategoryScreen(category: category),
-                    ),
+                  onTap: () => Navigator.of(context).pushNamed(
+                    Routes.vaultCategory,
+                    arguments: category,
                   ),
                 );
               },

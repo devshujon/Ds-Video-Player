@@ -71,8 +71,9 @@ class VaultRepositoryImpl implements VaultRepository {
   };
 
   Future<Directory> _vaultDir() async {
-    if (_vaultDirOverride != null) {
-      final dir = await _vaultDirOverride!();
+    final override = _vaultDirOverride;
+    if (override != null) {
+      final dir = await override();
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
@@ -87,8 +88,9 @@ class VaultRepositoryImpl implements VaultRepository {
   }
 
   Future<Directory> _thumbDir() async {
-    final base = _vaultDirOverride != null
-        ? await _vaultDirOverride!()
+    final override = _vaultDirOverride;
+    final base = override != null
+        ? await override()
         : await getApplicationSupportDirectory();
     final dir = Directory(p.join(base.path, 'vault_thumbs'));
     if (!await dir.exists()) {

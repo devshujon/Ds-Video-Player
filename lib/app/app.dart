@@ -22,6 +22,7 @@ import '../features/premium/presentation/providers/premium_provider.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/vault/data/vault_repository.dart';
 import '../features/vault/presentation/providers/vault_provider.dart';
+import '../features/vault/presentation/services/vault_session_guard.dart';
 import 'di/service_locator.dart';
 import 'router/app_router.dart';
 import 'router/route_names.dart';
@@ -84,7 +85,7 @@ class DSVideoPlayerApp extends StatelessWidget {
           )..evaluate(),
         ),
       ],
-      child: const _DeferredInit(child: _ThemedApp()),
+      child: const VaultSessionGuard(child: _DeferredInit(child: _ThemedApp())),
     );
   }
 }

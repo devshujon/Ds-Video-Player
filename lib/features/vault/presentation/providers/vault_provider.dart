@@ -144,6 +144,12 @@ class VaultProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  DateTime _lastActivity = DateTime.now();
+
+  void touchActivity() => _lastActivity = DateTime.now();
+
+  DateTime get lastActivity => _lastActivity;
+
   Future<void> _refresh() async {
     try {
       items = await _repo.list();
