@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/app_constants.dart';
 import '../core/services/secure_storage_service.dart';
 import '../core/theme/theme_controller.dart';
+import '../features/ads/data/ad_service.dart';
 import '../features/library/providers/library_provider.dart';
 import '../features/library/services/library_index_store.dart';
 import '../features/library/services/library_scan_service.dart';
@@ -37,23 +40,27 @@ class DSVideoPlayerApp extends StatelessWidget {
           create: (_) => PremiumProvider(
             sl<SecureStorageService>(),
             sl<IapService>(),
-          )..init(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (_) => SettingsProvider(sl<SharedPreferences>()),
         ),
         ChangeNotifierProvider(
-          create: (_) => MediaLibraryProvider(
-            scanProgressive: sl<ScanMediaProgressive>(),
-            getByType: sl<GetMediaByType>(),
-            getFolders: sl<GetFolders>(),
-            getFavorites: sl<GetFavorites>(),
-            getRecentlyPlayed: sl<GetRecentlyPlayed>(),
-            toggleFavorite: sl<ToggleFavorite>(),
-          ),
+          create: (_) {
+            final provider = MediaLibraryProvider(
+              scanProgressive: sl<ScanMediaProgressive>(),
+              getByType: sl<GetMediaByType>(),
+              getFolders: sl<GetFolders>(),
+              getFavorites: sl<GetFavorites>(),
+              getRecentlyPlayed: sl<GetRecentlyPlayed>(),
+              toggleFavorite: sl<ToggleFavorite>(),
+            );
+            // Begin cache read as early as possible — overlaps with splash paint.
+            unawaited(provider.loadFromCache());
+            return provider;
+          },
         ),
         ChangeNotifierProvider(create: (_) => PhotoGalleryProvider()),
-        // App-scoped: audio survives navigation; foundation for mini-player.
         ChangeNotifierProvider(
           create: (_) => AudioEngineProvider(sl<SaveResume>()),
         ),
@@ -67,17 +74,50 @@ class DSVideoPlayerApp extends StatelessWidget {
           create: (_) => PlaylistsProvider(sl<PlaylistRepository>()),
         ),
       ],
-      child: Consumer<ThemeController>(
-        builder: (context, theme, _) {
-          return MaterialApp(
-            title: AppConstants.appName,
-            debugShowCheckedModeBanner: false,
-            theme: theme.themeData,
-            initialRoute: Routes.splash,
-            onGenerateRoute: AppRouter.onGenerateRoute,
-          );
-        },
-      ),
+      child: const _DeferredInit(child: _ThemedApp()),
+    );
+  }
+}
+
+/// Defers non-critical startup work until after the first frame.
+class _DeferredInit extends StatefulWidget {
+  const _DeferredInit({required this.child});
+  final Widget child;
+
+  @override
+  State<_DeferredInit> createState() => _DeferredInitState();
+}
+
+class _DeferredInitState extends State<_DeferredInit> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(context.read<PremiumProvider>().init());
+      unawaited(sl<AdService>().init());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class _ThemedApp extends StatelessWidget {
+  const _ThemedApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeController>(
+      builder: (context, theme, _) {
+        return MaterialApp(
+          title: AppConstants.appName,
+          debugShowCheckedModeBanner: false,
+          theme: theme.themeData,
+          initialRoute: Routes.splash,
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        );
+      },
     );
   }
 }

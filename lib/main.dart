@@ -7,7 +7,6 @@ import 'package:media_kit/media_kit.dart';
 
 import 'app/app.dart';
 import 'app/di/service_locator.dart';
-import 'features/ads/data/ad_service.dart';
 
 Future<void> main() async {
   runZonedGuarded(() async {
@@ -19,8 +18,6 @@ Future<void> main() async {
     );
 
     await ServiceLocator.init();
-
-    unawaited(sl<AdService>().init());
 
     runApp(
       const ProviderScope(

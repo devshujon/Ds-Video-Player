@@ -9,6 +9,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/services/permission_service.dart';
 import '../../../media_library/presentation/providers/media_library_provider.dart';
 
+/// Minimal splash — permissions + cache load only. Scan runs on home.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -24,12 +25,18 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _boot() async {
-    await sl<PermissionService>().requestMediaAccess();
+    final lib = context.read<MediaLibraryProvider>();
+
+    // Permissions and cache load in parallel — both must finish before home.
+    await Future.wait([
+      sl<PermissionService>().requestMediaAccess(),
+      lib.loadFromCache(),
+    ]);
+
     if (!mounted) return;
-    // Kick off the first scan; library shows cached data immediately.
-    unawaited(context.read<MediaLibraryProvider>().bootstrap());
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
+
+    // Scan begins immediately; home renders cached/skeleton content while it runs.
+    lib.startBackgroundScan();
     Navigator.of(context).pushReplacementNamed(Routes.home);
   }
 
@@ -42,34 +49,23 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 96,
-              height: 96,
+              width: 88,
+              height: 88,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [scheme.primary, scheme.secondary],
                 ),
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: const Icon(Icons.play_arrow_rounded,
-                  size: 56, color: Colors.white),
+                  size: 52, color: Colors.white),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Text(
               AppConstants.appName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'by ${AppConstants.brand}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 28),
-            const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
             ),
           ],
         ),

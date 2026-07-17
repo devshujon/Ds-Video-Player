@@ -7,6 +7,7 @@ import '../../../player/domain/entities/playback_args.dart';
 import '../../domain/entities/media_item.dart';
 import '../providers/media_library_provider.dart';
 import '../widgets/continue_watching_card.dart';
+import '../widgets/library_scanning_shell.dart';
 import '../widgets/media_tile.dart';
 import '../../../../core/utils/formatters.dart';
 
@@ -17,31 +18,24 @@ class VideoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MediaLibraryProvider>(
       builder: (context, lib, _) {
-        if (lib.status == LibraryStatus.scanning && lib.videos.isEmpty) {
-          return const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
-                Text('Scanning your library…'),
-              ],
-            ),
-          );
-        }
         if (lib.status == LibraryStatus.permissionDenied) {
           return const _PermissionView();
         }
-        if (lib.videos.isEmpty) {
+
+        final scanning = lib.status == LibraryStatus.scanning;
+        final showSkeleton = scanning && !lib.hasCachedContent;
+
+        if (showSkeleton) {
+          return const LibraryScanningShell();
+        }
+
+        if (!scanning && lib.videos.isEmpty && !lib.hasCachedContent) {
           return const _EmptyView(label: 'No videos found');
         }
 
-        final continueItems = lib.recent
-            .where((m) => m.hasResume)
-            .take(10)
-            .toList(growable: false);
-
-        final recentVideos = lib.videos.take(12).toList(growable: false);
+        final continueItems = lib.continueWatching;
+        final recentPlayed = lib.recentlyPlayed;
+        final recentlyAdded = lib.recentlyAdded;
         final isGrid = lib.viewMode == LibraryViewMode.grid;
 
         return RefreshIndicator(
@@ -49,14 +43,15 @@ class VideoTab extends StatelessWidget {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              if (lib.status == LibraryStatus.scanning)
+              if (scanning)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: LinearProgressIndicator(
                       minHeight: 2,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
                     ),
                   ),
                 ),
@@ -77,14 +72,15 @@ class VideoTab extends StatelessWidget {
                                 item.resumePositionMs,
                                 item.durationMs,
                               ),
-                              onTap: () => _open(context, lib, item, continueItems),
+                              onTap: () =>
+                                  _open(context, lib, item, continueItems),
                             ),
                         ],
                       ),
                     ),
                   ),
                 ),
-              if (recentVideos.isNotEmpty)
+              if (recentPlayed.isNotEmpty)
                 SliverToBoxAdapter(
                   child: _HeroSection(
                     title: 'Recent videos',
@@ -93,10 +89,10 @@ class VideoTab extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: recentVideos.length,
+                        itemCount: recentPlayed.length,
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemBuilder: (context, i) {
-                          final item = recentVideos[i];
+                          final item = recentPlayed[i];
                           return SizedBox(
                             width: 160,
                             child: MediaTile(
@@ -111,68 +107,98 @@ class VideoTab extends StatelessWidget {
                     ),
                   ),
                 ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                sliver: SliverToBoxAdapter(
-                  child: Row(
-                    children: [
-                      Text(
-                        'All videos',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
+              if (recentlyAdded.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: _HeroSection(
+                    title: 'Recently added',
+                    child: SizedBox(
+                      height: 120,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: recentlyAdded.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, i) {
+                          final item = recentlyAdded[i];
+                          return SizedBox(
+                            width: 160,
+                            child: MediaTile(
+                              item: item,
+                              grid: true,
+                              onTap: () =>
+                                  _open(context, lib, item, lib.videos),
                             ),
+                          );
+                        },
                       ),
-                      const Spacer(),
-                      Text(
-                        '${lib.videos.length} items',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              if (isGrid)
+              if (lib.videos.isNotEmpty) ...[
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.35,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        final item = lib.videos[i];
-                        return RepaintBoundary(
-                          child: MediaTile(
-                            item: item,
-                            grid: true,
-                            onFavorite: () => lib.toggleFavorite(item),
-                            onTap: () =>
-                                _open(context, lib, item, lib.videos),
-                          ),
-                        );
-                      },
-                      childCount: lib.videos.length,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  sliver: SliverToBoxAdapter(
+                    child: Row(
+                      children: [
+                        Text(
+                          'All videos',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${lib.videos.length} items',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                   ),
-                )
-              else
-                SliverList.builder(
-                  itemCount: lib.videos.length,
-                  itemBuilder: (context, i) {
-                    final item = lib.videos[i];
-                    return RepaintBoundary(
-                      child: MediaTile(
-                        item: item,
-                        onFavorite: () => lib.toggleFavorite(item),
-                        onTap: () => _open(context, lib, item, lib.videos),
-                      ),
-                    );
-                  },
                 ),
+                if (isGrid)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 1.35,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) {
+                          final item = lib.videos[i];
+                          return RepaintBoundary(
+                            child: MediaTile(
+                              item: item,
+                              grid: true,
+                              onFavorite: () => lib.toggleFavorite(item),
+                              onTap: () =>
+                                  _open(context, lib, item, lib.videos),
+                            ),
+                          );
+                        },
+                        childCount: lib.videos.length,
+                      ),
+                    ),
+                  )
+                else
+                  SliverList.builder(
+                    itemCount: lib.videos.length,
+                    itemBuilder: (context, i) {
+                      final item = lib.videos[i];
+                      return RepaintBoundary(
+                        child: MediaTile(
+                          item: item,
+                          onFavorite: () => lib.toggleFavorite(item),
+                          onTap: () => _open(context, lib, item, lib.videos),
+                        ),
+                      );
+                    },
+                  ),
+              ],
             ],
           ),
         );

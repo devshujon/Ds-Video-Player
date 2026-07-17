@@ -90,6 +90,9 @@ class ServiceLocator {
     );
     sl.registerLazySingleton<Recommender>(() => const Recommender());
 
+    // Prewarm SQLite so the first cache read during splash is instant.
+    await sl<AppDatabase>().database;
+
     // --- Use cases ---
     sl
       ..registerFactory(() => ScanMedia(sl()))
