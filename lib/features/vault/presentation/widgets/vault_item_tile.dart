@@ -43,11 +43,16 @@ class VaultItemTile extends StatelessWidget {
         item.originalName,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: item.blobAvailable ? null : scheme.error,
+        ),
       ),
       subtitle: Text(
-        '${Formatters.fileSize(item.displaySizeBytes)}'
-        '${item.durationMs > 0 ? ' · ${Formatters.durationMs(item.durationMs)}' : ''}',
+        item.blobAvailable
+            ? '${Formatters.fileSize(item.displaySizeBytes)}'
+                '${item.durationMs > 0 ? ' · ${Formatters.durationMs(item.durationMs)}' : ''}'
+            : 'Encrypted file missing — delete this entry',
       ),
       trailing: PopupMenuButton<String>(
         onSelected: (v) => switch (v) {

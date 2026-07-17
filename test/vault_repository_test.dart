@@ -104,4 +104,19 @@ void main() {
 
     expect(item.category, VaultCategory.downloads.id);
   });
+
+  test('importing same uri twice returns existing item', () async {
+    final plain = File('${tmp.path}/dup.mp4');
+    await plain.writeAsBytes([1, 2, 3]);
+    final first = await repo.importFile(
+      plain,
+      originalUri: '/storage/dup.mp4',
+    );
+    final second = await repo.importFile(
+      plain,
+      originalUri: '/storage/dup.mp4',
+    );
+    expect(second.id, first.id);
+    expect(await repo.list(), hasLength(1));
+  });
 }

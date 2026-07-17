@@ -26,11 +26,13 @@ abstract interface class VaultRepository {
     String? folderPath,
     int durationMs = 0,
     String? thumbPath,
+    String? categoryOverride,
     void Function(double)? onProgress,
   });
 
   Future<VaultItem> lockFromMediaItem(
     MediaItem item, {
+    String? categoryOverride,
     void Function(double)? onProgress,
   });
 
@@ -45,6 +47,10 @@ abstract interface class VaultRepository {
   Future<void> delete(VaultItem item);
 
   Future<void> deleteAll();
+
+  Future<VaultItem?> findByOriginalUri(String uri);
+
+  Future<int> purgeMissingBlobs();
 }
 
 class VaultRepositoryImpl implements VaultRepository {
@@ -108,7 +114,37 @@ class VaultRepositoryImpl implements VaultRepository {
   Future<List<VaultItem>> list() async {
     final db = await _db.database;
     final rows = await db.query(_table, orderBy: 'added_at DESC');
-    return rows.map(_fromRow).toList(growable: false);
+    final items = <VaultItem>[];
+    for (final row in rows) {
+      items.add(await _fromRowWithAvailability(row));
+    }
+    return items;
+  }
+
+  @override
+  Future<VaultItem?> findByOriginalUri(String uri) async {
+    final db = await _db.database;
+    final rows = await db.query(
+      _table,
+      where: 'original_uri = ?',
+      whereArgs: [uri],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return _fromRowWithAvailability(rows.first);
+  }
+
+  @override
+  Future<int> purgeMissingBlobs() async {
+    final all = await list();
+    var removed = 0;
+    for (final item in all) {
+      if (!item.blobAvailable) {
+        await delete(item);
+        removed++;
+      }
+    }
+    return removed;
   }
 
   @override
@@ -136,7 +172,11 @@ class VaultRepositoryImpl implements VaultRepository {
       whereArgs: [category],
       orderBy: 'added_at DESC',
     );
-    return rows.map(_fromRow).toList(growable: false);
+    final items = <VaultItem>[];
+    for (final row in rows) {
+      items.add(await _fromRowWithAvailability(row));
+    }
+    return items;
   }
 
   @override
@@ -147,6 +187,7 @@ class VaultRepositoryImpl implements VaultRepository {
     String? folderPath,
     int durationMs = 0,
     String? thumbPath,
+    String? categoryOverride,
     void Function(double)? onProgress,
   }) async {
     if (!await source.exists()) {
@@ -155,12 +196,19 @@ class VaultRepositoryImpl implements VaultRepository {
 
     final name = originalName ?? p.basename(source.path);
     final uri = originalUri ?? source.path;
+
+    final existing = await findByOriginalUri(uri);
+    if (existing != null) {
+      return existing;
+    }
+
     final type = _classifyType(name);
-    final category = _classifyCategory(
-      name: name,
-      path: uri,
-      folderPath: folderPath,
-    );
+    final category = categoryOverride ??
+        _classifyCategory(
+          name: name,
+          path: uri,
+          folderPath: folderPath,
+        );
     final plaintextSize = await source.length();
     final dir = await _vaultDir();
     final blobName =
@@ -217,12 +265,14 @@ class VaultRepositoryImpl implements VaultRepository {
       thumbPath: copiedThumb ?? thumbPath,
       folderPath: folderPath,
       addedAt: now,
+      blobAvailable: true,
     );
   }
 
   @override
   Future<VaultItem> lockFromMediaItem(
     MediaItem item, {
+    String? categoryOverride,
     void Function(double)? onProgress,
   }) async {
     final source = File(item.uri);
@@ -233,6 +283,7 @@ class VaultRepositoryImpl implements VaultRepository {
       folderPath: item.folderPath,
       durationMs: item.durationMs,
       thumbPath: item.thumbPath,
+      categoryOverride: categoryOverride,
       onProgress: onProgress,
     );
   }
@@ -300,6 +351,26 @@ class VaultRepositoryImpl implements VaultRepository {
     final dest = File(p.join(dir.path, '$itemId${p.extension(thumbPath)}'));
     await src.copy(dest.path);
     return dest.path;
+  }
+
+  Future<VaultItem> _fromRowWithAvailability(Map<String, Object?> row) async {
+    final item = _fromRow(row);
+    final blob = File(item.vaultPath);
+    return VaultItem(
+      id: item.id,
+      vaultPath: item.vaultPath,
+      originalName: item.originalName,
+      originalUri: item.originalUri,
+      type: item.type,
+      category: item.category,
+      sizeBytes: item.sizeBytes,
+      plaintextSizeBytes: item.plaintextSizeBytes,
+      durationMs: item.durationMs,
+      thumbPath: item.thumbPath,
+      folderPath: item.folderPath,
+      addedAt: item.addedAt,
+      blobAvailable: await blob.exists(),
+    );
   }
 
   VaultItem _fromRow(Map<String, Object?> row) => VaultItem(

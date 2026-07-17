@@ -1,6 +1,6 @@
 import '../../data/vault_repository.dart';
 import '../../domain/entities/vault_item.dart';
-import '../providers/vault_provider.dart';
+import '../../presentation/providers/vault_provider.dart';
 
 /// Domain use cases — thin wrappers over [VaultRepository] and [VaultProvider].
 class EvaluateVault {

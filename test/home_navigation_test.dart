@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:ds_video_player/app/di/service_locator.dart';
 import 'package:ds_video_player/app/router/app_router.dart';
-import 'package:ds_video_player/app/router/route_names.dart';
 import 'package:ds_video_player/core/constants/app_constants.dart';
 import 'package:ds_video_player/core/services/premium_token_store.dart';
 import 'package:ds_video_player/core/services/thumbnail_cache_service.dart';

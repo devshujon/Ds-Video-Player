@@ -17,6 +17,7 @@ class VaultItem extends Equatable {
     this.durationMs = 0,
     this.thumbPath,
     this.folderPath,
+    this.blobAvailable = true,
   });
 
   final int id;
@@ -40,6 +41,9 @@ class VaultItem extends Equatable {
   final String? thumbPath;
   final String? folderPath;
   final int addedAt;
+
+  /// False when the encrypted blob is missing from disk.
+  final bool blobAvailable;
 
   VaultCategory get vaultCategory =>
       VaultCategory.fromId(category) ?? VaultCategory.documents;
