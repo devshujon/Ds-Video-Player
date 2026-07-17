@@ -3,6 +3,15 @@ class Routes {
 
   static const String splash = '/splash';
   static const String home = '/home';
+
+  /// Dedicated library section screens (pushed from Home Dashboard).
+  static const String libraryVideos = '/library/videos';
+  static const String libraryFolders = '/library/folders';
+  static const String libraryAudio = '/library/audio';
+  static const String libraryDownloads = '/library/downloads';
+  static const String libraryFavorites = '/library/favorites';
+  static const String libraryHidden = '/library/hidden';
+
   static const String folders = '/folders';
   static const String favorites = '/favorites';
   static const String library = '/library';

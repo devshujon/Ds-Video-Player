@@ -14,15 +14,19 @@ APK = Path("android/app/build/outputs/apk/release/app-release.apk")
 
 REQUIRED_STRINGS = [
     "Library summary",
+    "Quick actions",
+    "HomeDashboardScreen",
+    "LibraryPageScreen",
+    "/library/videos",
     "home_dashboard",
-    "HomeNavigationState",
-    "_DashboardTabStrip",
     "ic_launcher_foreground",
     "ic_launcher_background",
 ]
 
 FORBIDDEN_STRINGS = [
     "TabBarView",
+    "_DashboardTabStrip",
+    "HomeNavigationState",
 ]
 
 MIN_ICON_BYTES = 900  # brand mdpi icon; default Flutter icon is ~128 bytes
