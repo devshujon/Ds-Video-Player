@@ -121,6 +121,16 @@ class MediaRepositoryImpl implements MediaRepository {
     }
   }
 
+  @override
+  Future<Result<void>> removeMedia(String uri) async {
+    try {
+      await _local.deleteByUri(uri);
+      return const Success(null);
+    } catch (e) {
+      return FailureResult(DatabaseFailure(e.toString()));
+    }
+  }
+
   Future<Result<List<MediaItem>>> _guard(
     Future<List<MediaItem>> Function() run,
   ) async {

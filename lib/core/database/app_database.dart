@@ -77,6 +77,9 @@ class AppDatabase {
     for (final stmt in _migrationV2) {
       batch.execute(stmt);
     }
+    for (final stmt in _migrationV3) {
+      batch.execute(stmt);
+    }
     await batch.commit(noResult: true);
   }
 
@@ -85,6 +88,13 @@ class AppDatabase {
     if (from < 2) {
       final batch = db.batch();
       for (final stmt in _migrationV2) {
+        batch.execute(stmt);
+      }
+      await batch.commit(noResult: true);
+    }
+    if (from < 3) {
+      final batch = db.batch();
+      for (final stmt in _migrationV3) {
         batch.execute(stmt);
       }
       await batch.commit(noResult: true);
@@ -193,5 +203,17 @@ class AppDatabase {
     'CREATE INDEX idx_media_index_type ON media_index(media_type)',
     'CREATE INDEX idx_media_index_modified ON media_index(modified_at)',
     'CREATE INDEX idx_media_index_indexed_at ON media_index(indexed_at)',
+  ];
+
+  /// v3: richer vault metadata for premium home + library lock flow.
+  static const List<String> _migrationV3 = [
+    'ALTER TABLE vault_items ADD COLUMN duration_ms INTEGER NOT NULL DEFAULT 0',
+    'ALTER TABLE vault_items ADD COLUMN thumb_path TEXT',
+    'ALTER TABLE vault_items ADD COLUMN folder_path TEXT',
+    'ALTER TABLE vault_items ADD COLUMN plaintext_size_bytes INTEGER NOT NULL DEFAULT 0',
+    "ALTER TABLE vault_items ADD COLUMN category TEXT NOT NULL DEFAULT 'document'",
+    'CREATE INDEX idx_vault_category ON vault_items(category)',
+    'UPDATE vault_items SET plaintext_size_bytes = size_bytes WHERE plaintext_size_bytes = 0',
+    "UPDATE vault_items SET category = type WHERE category = 'document'",
   ];
 }

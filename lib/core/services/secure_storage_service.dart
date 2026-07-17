@@ -28,6 +28,16 @@ class SecureStorageService implements PremiumTokenStore {
     return stored != null && stored == _hash(pin);
   }
 
+  Future<void> clearPin() => _storage.delete(key: AppConstants.kPinHash);
+
+  Future<bool> get biometricsEnabled async =>
+      (await _storage.read(key: AppConstants.kVaultBiometrics)) == '1';
+
+  Future<void> setBiometricsEnabled(bool enabled) => _storage.write(
+        key: AppConstants.kVaultBiometrics,
+        value: enabled ? '1' : '0',
+      );
+
   // --- Premium entitlement token (signed payload cached for offline) ---
   @override
   Future<void> writePremiumToken(String token) =>
