@@ -1,0 +1,28 @@
+# M3 — analysis tuned for realistic CI use.
+#
+# The base `flutter_lints` set stays on. The previously-added strict rules
+# (require_trailing_commas, prefer_const_constructors, prefer_const_
+# declarations, prefer_final_locals, use_key_in_widget_constructors) were
+# removed: across a freshly-integrated 12-branch codebase they generate
+# hundreds of infos that drown real findings and would block a naive
+# `flutter analyze` CI gate before the first build is even green.
+#
+# Re-introduce them incrementally AFTER the first successful build, ideally
+# via `dart fix --apply`, not as a launch blocker.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    # Keep only the rule that catches a real bug class, not formatting.
+    avoid_print: true
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  errors:
+    invalid_annotation_target: ignore
+    # Formatting/style preferences must not fail the build pre-launch.
+    # Promote these back to `warning`/`error` once the baseline is clean.
+    prefer_const_constructors: info
+    require_trailing_commas: info

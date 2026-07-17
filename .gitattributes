@@ -1,0 +1,9 @@
+# `merge=union` keeps both sides of a conflicting hunk instead of raising a
+# conflict. Applied only to the append-only roadmap/strategy docs, where
+# concatenation is always the correct resolution.
+#
+# NOTE: during the 12-branch build-stabilization integration this also
+# briefly covered route_names.dart and service_locator.dart. Those entries
+# were removed afterwards — `union` on source files can silently hide a
+# genuine future conflict, so code files must conflict normally.
+docs/** merge=union
