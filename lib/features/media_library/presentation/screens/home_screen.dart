@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final HomeNavigationState _nav = HomeNavigationState();
 
-  late final TabController _tabs;
+  TabController? _tabs;
 
   static const _labels = [
     'Videos',
@@ -50,31 +50,38 @@ class _HomeScreenState extends State<HomeScreen>
     HiddenTab(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    // TabController drives tab-bar visuals only. Body content is gated by
-    // [_nav.onDashboard] so index 0 never implies Videos on cold start.
-    _tabs = TabController(length: _labels.length, vsync: this);
-  }
-
   bool get _onDashboard => _nav.onDashboard;
+
+  TabController get _tabController {
+    return _tabs ??= TabController(
+      length: _labels.length,
+      vsync: this,
+      initialIndex: _nav.activeLibraryTab ?? 0,
+    );
+  }
 
   void _selectLibraryTab(int index) {
     setState(() {
       _nav.selectLibraryTab(index);
-      _tabs.index = index;
+      final controller = _tabController;
+      if (controller.index != index) {
+        controller.animateTo(index);
+      }
     });
   }
 
   void _goToDashboard() {
     if (_onDashboard) return;
-    setState(_nav.goToDashboard);
+    setState(() {
+      _nav.goToDashboard();
+      _tabs?.dispose();
+      _tabs = null;
+    });
   }
 
   @override
   void dispose() {
-    _tabs.dispose();
+    _tabs?.dispose();
     super.dispose();
   }
 
@@ -115,29 +122,25 @@ class _HomeScreenState extends State<HomeScreen>
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: TabBar(
-            controller: _tabs,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            onTap: _selectLibraryTab,
-            // On the dashboard no library tab is active — flatten all labels
-            // and hide the indicator so Videos is not shown as selected.
-            labelColor:
-                _onDashboard ? scheme.onSurfaceVariant : scheme.primary,
-            unselectedLabelColor: scheme.onSurfaceVariant,
-            indicatorColor:
-                _onDashboard ? Colors.transparent : scheme.primary,
-            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-            dividerColor: scheme.outlineVariant.withValues(alpha: 0.35),
-            tabs: [for (final l in _labels) Tab(text: l)],
-          ),
+          child: _onDashboard
+              ? _DashboardTabStrip(
+                  labels: _labels,
+                  onTap: _selectLibraryTab,
+                )
+              : TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  onTap: _selectLibraryTab,
+                  tabs: [for (final l in _labels) Tab(text: l)],
+                ),
         ),
       ),
       body: Column(
         children: [
           Expanded(
             child: _onDashboard
-                ? const HomeDashboard()
+                ? const HomeDashboard(key: Key('home_dashboard'))
                 : IndexedStack(
                     index: _nav.activeLibraryTab!,
                     children: _tabBodies,
@@ -145,6 +148,52 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SafeArea(top: false, child: BannerAdView()),
         ],
+      ),
+    );
+  }
+}
+
+/// Tab labels with no selected state — used on the Home Dashboard so Videos
+/// is never highlighted at launch (TabController always starts at index 0).
+class _DashboardTabStrip extends StatelessWidget {
+  const _DashboardTabStrip({
+    required this.labels,
+    required this.onTap,
+  });
+
+  final List<String> labels;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        );
+
+    return Material(
+      color: Theme.of(context).appBarTheme.backgroundColor ??
+          Theme.of(context).colorScheme.surface,
+      child: SizedBox(
+        height: 48,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          itemCount: labels.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 4),
+          itemBuilder: (context, index) {
+            return InkWell(
+              onTap: () => onTap(index),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Text(labels[index], style: style),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

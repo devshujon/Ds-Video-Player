@@ -94,10 +94,10 @@ void main() {
 
       expect(find.text(AppConstants.appName), findsOneWidget);
       expect(find.text('Library summary'), findsOneWidget);
+      expect(find.byKey(const Key('home_dashboard')), findsOneWidget);
       expect(find.text('Videos'), findsOneWidget);
-
-      final tabBar = tester.widget<TabBar>(find.byType(TabBar));
-      expect(tabBar.indicatorColor, Colors.transparent);
+      // Dashboard uses a flat tab strip — no TabBar, so Videos cannot appear selected.
+      expect(find.byType(TabBar), findsNothing);
     });
 
     testWidgets('tapping Videos opens the Videos library tab', (tester) async {
@@ -109,9 +109,8 @@ void main() {
 
       expect(find.text(AppConstants.appName), findsNothing);
       expect(find.text('Library summary'), findsNothing);
-
-      final tabBar = tester.widget<TabBar>(find.byType(TabBar));
-      expect(tabBar.indicatorColor, isNot(Colors.transparent));
+      expect(find.byKey(const Key('home_dashboard')), findsNothing);
+      expect(find.byType(TabBar), findsOneWidget);
     });
 
     testWidgets('tapping app title returns to Home Dashboard', (tester) async {
