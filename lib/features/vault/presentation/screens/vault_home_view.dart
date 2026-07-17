@@ -29,20 +29,32 @@ class VaultHomeView extends StatelessWidget {
               key: const ValueKey('empty'),
               onMoveFiles: () => _showMoveHint(context),
             )
-          : ListView.separated(
-              key: const ValueKey('categories'),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: VaultCategory.values.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) {
-                final category = VaultCategory.values[i];
-                final count = vault.categoryCounts[category.id] ?? 0;
-                return VaultCategoryCard(
-                  category: category,
-                  count: count,
-                  onTap: () => Navigator.of(context).pushNamed(
-                    Routes.vaultCategory,
-                    arguments: category,
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth > 720 ? 640.0 : constraints.maxWidth;
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: ListView.separated(
+                      key: const ValueKey('categories'),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                      itemCount: VaultCategory.values.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, i) {
+                        final category = VaultCategory.values[i];
+                        final count = vault.categoryCounts[category.id] ?? 0;
+                        return VaultCategoryCard(
+                          index: i,
+                          category: category,
+                          count: count,
+                          onTap: () => Navigator.of(context).pushNamed(
+                            Routes.vaultCategory,
+                            arguments: category,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 );
               },
