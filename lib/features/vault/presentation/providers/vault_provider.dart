@@ -43,6 +43,7 @@ class VaultProvider extends ChangeNotifier {
   VaultBiometricAvailability biometricAvailability =
       VaultBiometricAvailability.unknown;
   List<BiometricType> enrolledBiometrics = const [];
+  int pinLength = 4;
 
   bool get hasItems => items.isNotEmpty;
 
@@ -54,6 +55,7 @@ class VaultProvider extends ChangeNotifier {
     notifyListeners();
     try {
       biometricsEnabled = await _secure.biometricsEnabled;
+      pinLength = await _secure.pinLength;
       await _probeBiometrics();
       state = await _secure.hasPin ? VaultState.locked : VaultState.needsSetup;
       if (state == VaultState.unlocked) {
@@ -100,10 +102,13 @@ class VaultProvider extends ChangeNotifier {
   Future<bool> setupVault({
     required String pin,
     required String confirmPin,
+    required int pinLength,
     required bool enableBiometrics,
   }) async {
     if (pin.length < 4 || pin != confirmPin) return false;
     await _secure.setPin(pin);
+    await _secure.setPinLength(pinLength);
+    this.pinLength = pinLength;
     await _secure.getOrCreateVaultKey();
     await _secure.setBiometricsEnabled(enableBiometrics);
     biometricsEnabled = enableBiometrics;

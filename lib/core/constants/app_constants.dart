@@ -29,6 +29,7 @@ class AppConstants {
   // Secure-storage keys.
   static const String kPinHash = 'vault_pin_hash';
   static const String kVaultBiometrics = 'vault_biometrics_enabled';
+  static const String kVaultPinLength = 'vault_pin_length';
   static const String kVaultKey = 'vault_aes_key';
   static const String kPremiumToken = 'premium_entitlement_token';
 

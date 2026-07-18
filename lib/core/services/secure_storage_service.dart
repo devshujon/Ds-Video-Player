@@ -28,7 +28,21 @@ class SecureStorageService implements PremiumTokenStore {
     return stored != null && stored == _hash(pin);
   }
 
-  Future<void> clearPin() => _storage.delete(key: AppConstants.kPinHash);
+  Future<void> clearPin() async {
+    await _storage.delete(key: AppConstants.kPinHash);
+    await _storage.delete(key: AppConstants.kVaultPinLength);
+  }
+
+  Future<int> get pinLength async {
+    final raw = await _storage.read(key: AppConstants.kVaultPinLength);
+    final parsed = int.tryParse(raw ?? '');
+    return parsed == 6 ? 6 : 4;
+  }
+
+  Future<void> setPinLength(int length) => _storage.write(
+        key: AppConstants.kVaultPinLength,
+        value: length.toString(),
+      );
 
   Future<bool> get biometricsEnabled async =>
       (await _storage.read(key: AppConstants.kVaultBiometrics)) == '1';

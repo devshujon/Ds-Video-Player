@@ -37,6 +37,15 @@ class _FakeSecureStorage extends SecureStorageService {
   @override
   Future<String> getOrCreateVaultKey() async =>
       _mem.putIfAbsent(AppConstants.kVaultKey, () => '0a' * 32);
+
+  @override
+  Future<void> setPinLength(int length) async {
+    _mem[AppConstants.kVaultPinLength] = length.toString();
+  }
+
+  @override
+  Future<int> get pinLength async =>
+      _mem[AppConstants.kVaultPinLength] == '6' ? 6 : 4;
 }
 
 class _FakeMediaRepository implements MediaRepository {
@@ -133,6 +142,7 @@ void main() {
     final ok = await provider.setupVault(
       pin: '1234',
       confirmPin: '1234',
+      pinLength: 4,
       enableBiometrics: false,
     );
     expect(ok, isTrue);
@@ -148,6 +158,7 @@ void main() {
     await provider.setupVault(
       pin: '1234',
       confirmPin: '1234',
+      pinLength: 4,
       enableBiometrics: false,
     );
 
@@ -178,6 +189,7 @@ void main() {
     await provider.setupVault(
       pin: '1234',
       confirmPin: '1234',
+      pinLength: 4,
       enableBiometrics: false,
     );
     provider.lock();

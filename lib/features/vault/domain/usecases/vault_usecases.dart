@@ -15,11 +15,13 @@ class SetupVault {
   Future<bool> call({
     required String pin,
     required String confirmPin,
+    required int pinLength,
     required bool enableBiometrics,
   }) =>
       _provider.setupVault(
         pin: pin,
         confirmPin: confirmPin,
+        pinLength: pinLength,
         enableBiometrics: enableBiometrics,
       );
 }
