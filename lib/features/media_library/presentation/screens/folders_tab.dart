@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../app/router/route_names.dart';
 import '../../../player/domain/entities/playback_args.dart';
+import '../../../vault/presentation/utils/vault_lock_helper.dart';
 import '../../domain/entities/media_folder.dart';
 import '../providers/media_library_provider.dart';
 import '../widgets/media_tile.dart';
@@ -69,6 +70,7 @@ class _FolderTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lib = context.watch<MediaLibraryProvider>();
     return ListTile(
       leading: const Icon(Icons.folder_rounded),
       title: Text(folder.name, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -84,6 +86,11 @@ class _FolderTile extends StatelessWidget {
           builder: (_) => _FolderContents(path: folder.path),
         ),
       ),
+      onLongPress: () {
+        final items = lib.itemsInFolder(folder.path);
+        if (items.isEmpty) return;
+        VaultLockHelper.showFolderLockSheet(context, folder.path, items);
+      },
     );
   }
 }
@@ -110,6 +117,14 @@ class _FolderContents extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: items.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () =>
+                  VaultLockHelper.showFolderLockSheet(context, path, items),
+              icon: const Icon(Icons.lock_rounded),
+              label: const Text('Lock folder'),
+            )
+          : null,
     );
   }
 }

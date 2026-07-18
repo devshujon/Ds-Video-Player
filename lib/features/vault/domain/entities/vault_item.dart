@@ -1,33 +1,55 @@
 import 'package:equatable/equatable.dart';
 
+import 'vault_category.dart';
+
 /// One file stored encrypted in the private vault.
-/// The `vault_items` SQLite row + the on-disk encrypted blob at [vaultPath]
-/// together make up the item — repository operations keep the two in sync.
 class VaultItem extends Equatable {
   const VaultItem({
     required this.id,
     required this.vaultPath,
     required this.originalName,
     required this.type,
+    required this.category,
     required this.sizeBytes,
+    required this.plaintextSizeBytes,
     required this.addedAt,
     this.originalUri,
+    this.durationMs = 0,
+    this.thumbPath,
+    this.folderPath,
+    this.blobAvailable = true,
   });
 
   final int id;
-
-  /// Absolute path to the encrypted blob in the app-private vault dir.
   final String vaultPath;
-
   final String originalName;
   final String? originalUri;
 
-  /// `'video' | 'audio' | 'image' | 'other'`. Plain string — keeps the
-  /// entity independent of presentation enums.
+  /// Legacy type: `video | audio | image | document | other`.
   final String type;
 
+  /// Home-screen grouping category id.
+  final String category;
+
+  /// Encrypted blob size on disk.
   final int sizeBytes;
+
+  /// Original file size before encryption.
+  final int plaintextSizeBytes;
+
+  final int durationMs;
+  final String? thumbPath;
+  final String? folderPath;
   final int addedAt;
+
+  /// False when the encrypted blob is missing from disk.
+  final bool blobAvailable;
+
+  VaultCategory get vaultCategory =>
+      VaultCategory.fromId(category) ?? VaultCategory.documents;
+
+  int get displaySizeBytes =>
+      plaintextSizeBytes > 0 ? plaintextSizeBytes : sizeBytes;
 
   @override
   List<Object?> get props => [id];

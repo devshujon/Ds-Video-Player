@@ -8,7 +8,7 @@ class AppConstants {
   static const String privacyPolicyUrl =
       'https://github.com/devshujon/Ds-Video-Player/blob/main/docs/PRIVACY_POLICY.md';
   static const String databaseName = 'ds_video_player.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   // Play Billing product IDs (see docs/05_MONETIZATION.md).
   static const String iapLifetime = 'ds_premium_lifetime';
@@ -28,6 +28,8 @@ class AppConstants {
 
   // Secure-storage keys.
   static const String kPinHash = 'vault_pin_hash';
+  static const String kVaultBiometrics = 'vault_biometrics_enabled';
+  static const String kVaultPinLength = 'vault_pin_length';
   static const String kVaultKey = 'vault_aes_key';
   static const String kPremiumToken = 'premium_entitlement_token';
 
@@ -37,6 +39,7 @@ class AppConstants {
   static const int thumbnailMaxDiskBytes = 200 * 1024 * 1024;
   static const Duration thumbnailMaxAge = Duration(days: 30);
   static const Duration resumeMinWatched = Duration(seconds: 10);
+  static const Duration vaultInactivityTimeout = Duration(minutes: 2);
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 4.0;
 

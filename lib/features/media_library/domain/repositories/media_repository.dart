@@ -35,4 +35,6 @@ abstract interface class MediaRepository {
   });
 
   Future<Result<void>> setFolderHidden(String path, bool hidden);
+
+  Future<Result<void>> removeMedia(String uri);
 }

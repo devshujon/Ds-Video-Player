@@ -67,6 +67,9 @@ class _FakeMediaRepository implements MediaRepository {
   @override
   Future<Result<void>> setFolderHidden(String path, bool hidden) async =>
       const Success(null);
+
+  @override
+  Future<Result<void>> removeMedia(String uri) async => const Success(null);
 }
 
 MediaLibraryProvider createTestMediaLibraryProvider({

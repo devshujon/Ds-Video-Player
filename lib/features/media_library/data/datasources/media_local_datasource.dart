@@ -162,6 +162,14 @@ class MediaLocalDataSource {
     );
   }
 
+  Future<void> deleteByUri(String uri) async {
+    final db = await _appDb.database;
+    await db.delete('favorites', where: 'media_uri = ?', whereArgs: [uri]);
+    await db.delete('playback_history', where: 'media_uri = ?', whereArgs: [uri]);
+    await db.delete('usage_events', where: 'media_uri = ?', whereArgs: [uri]);
+    await db.delete('media_items', where: 'uri = ?', whereArgs: [uri]);
+  }
+
   Future<void> setFolderHidden(String path, bool hidden) async {
     final db = await _appDb.database;
     await db.insert(

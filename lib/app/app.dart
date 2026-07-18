@@ -20,12 +20,15 @@ import '../features/playlists/presentation/providers/playlists_provider.dart';
 import '../features/premium/data/iap_service.dart';
 import '../features/premium/presentation/providers/premium_provider.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
+import '../features/vault/data/vault_repository.dart';
+import '../features/vault/presentation/providers/vault_provider.dart';
+import '../features/vault/presentation/services/vault_session_guard.dart';
 import 'di/service_locator.dart';
 import 'router/app_router.dart';
 import 'router/route_names.dart';
 
 /// App root: app-scoped providers + themed MaterialApp.
-/// Route-scoped providers (Player, Vault) are created at their screens.
+/// Route-scoped providers (Player) are created at their screens.
 class DSVideoPlayerApp extends StatelessWidget {
   const DSVideoPlayerApp({super.key});
 
@@ -74,8 +77,15 @@ class DSVideoPlayerApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => PlaylistsProvider(sl<PlaylistRepository>()),
         ),
+        ChangeNotifierProvider(
+          create: (_) => VaultProvider(
+            sl<SecureStorageService>(),
+            sl<VaultRepository>(),
+            sl<RemoveMedia>(),
+          )..evaluate(),
+        ),
       ],
-      child: const _DeferredInit(child: _ThemedApp()),
+      child: const VaultSessionGuard(child: _DeferredInit(child: _ThemedApp())),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/utils/formatters.dart';
+import '../../../vault/presentation/utils/vault_lock_helper.dart';
 import '../../domain/entities/media_item.dart';
 import 'video_thumbnail.dart';
 
@@ -54,6 +55,7 @@ class _ListTile extends StatelessWidget {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       onTap: onTap,
+      onLongPress: () => VaultLockHelper.showMoveSheet(context, item),
       leading: VideoThumbnail(
         item: item,
         width: 64,
@@ -117,6 +119,7 @@ class _GridTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: () => VaultLockHelper.showMoveSheet(context, item),
       borderRadius: BorderRadius.circular(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

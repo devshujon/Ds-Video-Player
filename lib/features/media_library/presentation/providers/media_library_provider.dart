@@ -203,6 +203,20 @@ class MediaLibraryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Removes files from the in-memory lists after they were vaulted.
+  Future<void> removeFromLibrary(Iterable<String> uris) async {
+    final set = uris is Set<String> ? uris : uris.toSet();
+    videos = videos.where((v) => !set.contains(v.uri)).toList(growable: false);
+    audios = audios.where((v) => !set.contains(v.uri)).toList(growable: false);
+    favorites =
+        favorites.where((v) => !set.contains(v.uri)).toList(growable: false);
+    recent = recent.where((v) => !set.contains(v.uri)).toList(growable: false);
+    hiddenItems =
+        hiddenItems.where((v) => !set.contains(v.uri)).toList(growable: false);
+    notifyListeners();
+    await _refreshFromCache();
+  }
+
   List<MediaItem> itemsInFolder(String path) =>
       videos.where((v) => v.folderPath == path).toList();
 }

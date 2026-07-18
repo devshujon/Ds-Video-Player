@@ -28,6 +28,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/splash/presentation/screens/splash_screen.dart';
 import '../../features/storage/presentation/screens/storage_cleaner_screen.dart';
 import '../../features/streaming/presentation/screens/stream_url_screen.dart';
+import '../../features/vault/presentation/navigation/vault_routes.dart';
 import '../../features/vault/presentation/screens/vault_screen.dart';
 import '../../core/utils/safe_route_args.dart';
 import 'route_names.dart';
@@ -109,6 +110,12 @@ class AppRouter {
       case Routes.premium:
         page = const PremiumScreen();
       case Routes.vault:
+        page = const VaultScreen();
+      case Routes.vaultCategory:
+        final vaultRoute = VaultRoutes.onGenerateRoute(settings);
+        if (vaultRoute != null) {
+          return vaultRoute;
+        }
         page = const VaultScreen();
       case Routes.equalizer:
         page = const EqualizerScreen();

@@ -21,6 +21,7 @@ class Routes {
   static const String settings = '/settings';
   static const String premium = '/premium';
   static const String vault = '/vault';
+  static const String vaultCategory = '/vault/category';
   static const String equalizer = '/equalizer';
   static const String duplicates = '/tools/duplicates';
   static const String storageCleaner = '/tools/storage';
